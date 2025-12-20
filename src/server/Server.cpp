@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 12:15:56 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/20 12:42:21 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,7 +143,10 @@ void Server::initListenSockets()
         {
             Socket newSocket = ls;
             if (setupSocket(newSocket, p))
+            {
                 successfulSockets.push_back(newSocket);
+                break;
+            }
         }
         freeaddrinfo(res);
     } 
