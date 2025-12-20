@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/11 17:15:41 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 12:24:34 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/20 20:30:30 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,15 +21,6 @@ std::string Tokenizer::removeComments(const std::string& line)
     if (commentPos != std::string::npos)
         return line.substr(0, commentPos);
     return line;
-}
-
-std::string Tokenizer::trim(const std::string& line)
-{
-    size_t first = line.find_first_not_of(" \t");
-    if (first == std::string::npos)
-        return "";
-    size_t last = line.find_last_not_of(" \t");
-    return line.substr(first, last - first + 1);
 }
 
 std::string Tokenizer::addSpacesBetweenSymbol(const std::string& line)

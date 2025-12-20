@@ -4,7 +4,7 @@ CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
 # Include directories
-INCLUDES = -I./includes -I./includes/parser -I./includes/server 
+INCLUDES = -I./includes -I./includes/parser -I./includes/server -I./includes/utils
 
 # Directories
 OBJ_DIR = obj
@@ -15,7 +15,8 @@ SRCS = src/webserv.cpp \
        src/parser/ConfigValidator.cpp \
        src/parser/ConfigParser.cpp \
        src/parser/ConfigStructures.cpp \
-       src/server/Server.cpp
+       src/server/Server.cpp \
+       src/utils/utils.cpp
 
 # Object files (in obj directory)
 OBJS = $(SRCS:src/%.cpp=$(OBJ_DIR)/%.o)

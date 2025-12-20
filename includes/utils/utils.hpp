@@ -1,30 +1,22 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   webserv.hpp                                        :+:      :+:    :+:   */
+/*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/11 00:28:07 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 20:29:20 by dikhalil         ###   ########.fr       */
+/*   Created: 2025/12/20 20:27:57 by dikhalil          #+#    #+#             */
+/*   Updated: 2025/12/20 23:06:02 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef WEBSERV_HPP
-#define WEBSERV_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
-#include <iostream>
 #include <string>
-#include <vector>
-#include <map>
-#include <fstream>
 #include <sstream>
-#include <cstdlib>
-#include <cstring>
-#include <stdexcept> 
-#include <algorithm>
-#include "utils.hpp"
 
+unsigned long strToUL(const std::string& str);
+std::string trim(const std::string& line);
 
-
-#endif 
+#endif

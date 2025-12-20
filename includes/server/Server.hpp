@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 03:08:36 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/21 02:12:00 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,17 @@
 #include <poll.h>
 #include <arpa/inet.h>
 
+#define BUFFER_SIZE 4096
+
 struct Socket
 {
     int fd;
     std::string host;
     int port;
+    std::string buffer;
+    size_t totalSent;
 };
+
 
 class Server
 {
@@ -38,23 +43,30 @@ class Server
         std::vector<Socket> listenSockets;
         std::vector<Socket> clientSockets;
         
+        void closeSocket(std::vector<Socket>& sockets, int fd);
+        void closeAllSockets(std::vector<Socket>& sockets);
         bool closeSocketOnError(Socket& ls, const std::string& errorMsg);
         bool setupSocket(Socket& ls, struct addrinfo* addr);
         struct addrinfo* getAddressInfo(const Socket& ls);
-        void closeAllLientSockets();
-        void closeClientSocket(int clientFd);
-        void closeAllClientSockets();
         void setNonBlocking(int fd);
+        void addToPoll(int fd, short events);
         void initPollFds();
+        void changePollEvent(int fd, short events);
+        void readFromClient(Socket& client);
+        bool requestIsComplete(const std::string& buffer);
+        void writeToClient(Socket& client);
+        void handleSocketError(int fd, size_t& index, bool isListen);
+        void handleListenSocket(size_t& index);
+        void handleClientSocket(size_t& index);
+        Socket* findSocket(std::vector<Socket>& sockets, int fd);
         void fillListenSockets(const HttpConfig& config);
         void initListenSockets();
         void acceptClient(int listenFd);
+        void addClientSocket(int clientFd, struct sockaddr_in& clientAddr);
     public:
         Server(const HttpConfig& config);
         ~Server();
         void run();
-        const std::vector<Socket>& getListenSockets() const;
-        const std::vector<Socket>& getClientSockets() const;
 };
 
 #endif

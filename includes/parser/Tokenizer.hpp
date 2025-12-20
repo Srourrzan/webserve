@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/11 17:15:47 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/18 01:22:11 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/20 20:30:41 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ class Tokenizer
         size_t pos;
         
         std::string removeComments(const std::string& line);
-        std::string trim(const std::string& line);
         std::string addSpacesBetweenSymbol(const std::string& line);
         std::string stripQuotes(const std::string& token);
         
