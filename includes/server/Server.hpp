@@ -28,11 +28,13 @@
 
 struct Socket
 {
-    int fd;
-    std::string host;
-    int port;
-    std::string buffer;
-    size_t totalSent;
+  int fd;
+  std::string host;
+  int port;
+  std::string buffer;
+  size_t totalSent;
+  std::string _out; //serialized response to send
+  int _parsed_requrest_state;
 };
 
 

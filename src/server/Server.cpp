@@ -271,6 +271,7 @@ void Server::handleListenSocket(size_t& index)
         acceptClient(pollFds[index].fd);
 }
 
+// I should replace the below code to a functional code using HTTP 
 void Server::readFromClient(Socket& client)
 {
     char buffer[BUFFER_SIZE];
@@ -310,7 +311,8 @@ void Server::readFromClient(Socket& client)
             if (!line.empty() && line[line.size() - 1] == '\r')
                 line = line.substr(0, line.size() - 1);
             std::cout << "Line " << lineNum++ << ": " << line << "\n";
-        }        
+        }     
+		
         changePollEvent(client.fd, POLLOUT);
     }
 }
