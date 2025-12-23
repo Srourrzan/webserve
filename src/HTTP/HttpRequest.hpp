@@ -3,13 +3,15 @@
 
 # include <vector>
 # include <string>
+# include <map>
+# include "ConfigStructures.hpp"
 
 class HttpRequest
 {
 public:
-  HttpRequest();
+  HttpRequest(std::string& buffer, HttpConfig& config);
   ~HttpRequest();
-  int parse(const std::string& rawRequest);
+  int parse();
 
 	const std::string& getMethod() const;
 	const std::string& getUri() const;
@@ -25,14 +27,16 @@ public:
   int getErrorCode() const;
 
 private:
-  std::string _method;
   std::string _uri;
+  std::vector<ListenConfig> _host;
+  std::string _body;
   std::string _path;
+  std::string _method;
+  HttpConfig _config;
   std::string _queryString;
   std::string _httpVersion;
   std::vector<std::string, std::string> _headers;
   std::vector<std::string, std::string> _queryParams;
-  std::string _body;
 };
 
 #endif

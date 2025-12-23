@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 00:00:00 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 03:07:00 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/23 15:47:16 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ int main(int argc, char** argv)
     try
     {
         HttpConfig config;
-        
         if (argc == 1)
             config.createDefaultConfig();
         else

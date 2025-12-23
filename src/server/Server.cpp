@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/21 02:16:14 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/23 18:00:20 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+//#include "HttpRequest.hpp"
 
-Server::Server(const HttpConfig& config)
+Server::Server(const HttpConfig& config) :_config(config)
 {
     listenSockets.clear();
     clientSockets.clear();
@@ -178,7 +179,7 @@ void Server::addClientSocket(int clientFd, struct sockaddr_in& clientAddr)
     Socket cl;
     cl.fd = clientFd;
     cl.port = ntohs(clientAddr.sin_port);
-    cl.host = inet_ntoa(clientAddr.sin_addr);//forbiden
+    cl.host = inet_ntoa(clientAddr.sin_addr);
     clientSockets.push_back(cl);
 }
 
@@ -312,7 +313,7 @@ void Server::readFromClient(Socket& client)
                 line = line.substr(0, line.size() - 1);
             std::cout << "Line " << lineNum++ << ": " << line << "\n";
         }     
-		
+		// HttpRequest(buffer, _config);
         changePollEvent(client.fd, POLLOUT);
     }
 }

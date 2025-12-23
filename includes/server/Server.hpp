@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/21 02:12:00 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/23 15:19:09 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ class Server
         std::vector<struct pollfd> pollFds;
         std::vector<Socket> listenSockets;
         std::vector<Socket> clientSockets;
+        HttpConfig _config;
         
         void closeSocket(std::vector<Socket>& sockets, int fd);
         void closeAllSockets(std::vector<Socket>& sockets);
