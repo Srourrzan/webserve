@@ -4,18 +4,20 @@ CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
 # Include directories
-INCLUDES = -I./includes -I./includes/parser -I./includes/server -I./includes/utils
+INCLUDES = -I./includes -I./includes/config -I./includes/server -I./includes/utils -I./includes/http
 
 # Directories
 OBJ_DIR = obj
 
 # Source files
 SRCS = src/webserv.cpp \
-       src/parser/Tokenizer.cpp \
-       src/parser/ConfigValidator.cpp \
-       src/parser/ConfigParser.cpp \
-       src/parser/ConfigStructures.cpp \
+       src/config/ConfigTokenizer.cpp \
+       src/config/ConfigValidator.cpp \
+       src/config/ConfigParser.cpp \
+       src/config/ConfigStructures.cpp \
        src/server/Server.cpp \
+       src/http/HttpRequest.cpp \
+       src/http/HttpResponse.cpp \
        src/utils/utils.cpp
 
 # Object files (in obj directory)

@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:36:34 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/19 20:18:42 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/27 00:41:35 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,10 +190,17 @@ void ConfigParser::parseReturn(LocationConfig& location)
     std::string codeStr = tokenizer.consumeValue();  
     
     location.redirectCode = std::atoi(codeStr.c_str());
-    if (!validator.isValidStatus(location.redirectCode))
-        throw std::runtime_error("Invalid HTTP status code: " + codeStr);
+    
+    if (!validator.isValidRedirectCode(location.redirectCode))
+    {
+        std::ostringstream oss;
+        oss << "return directive only supports redirect codes (300, 301, 302), got: " << location.redirectCode;
+        throw std::runtime_error(oss.str());
+    }
+    
     if (!tokenizer.hasMore() || tokenizer.peek() == ";")
-        throw std::runtime_error("return directive requires a URL");
+        throw std::runtime_error("return directive requires a URL/path for redirect");
+    
     location.redirectUrl = tokenizer.consumeValue();  
     tokenizer.expect(";");
 }

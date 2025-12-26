@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 00:00:00 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/18 01:27:37 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/26 18:52:28 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ class ConfigParser
 {
     private:
         HttpConfig config;
-        Tokenizer tokenizer;
+        ConfigTokenizer tokenizer;
         ConfigValidator validator;
         
         void parseHttp();

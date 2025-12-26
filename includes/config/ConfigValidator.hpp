@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:33:22 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/19 20:26:15 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/27 00:26:57 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #define CONFIG_VALIDATOR_HPP
 
 #include "ConfigStructures.hpp"
-#include "Tokenizer.hpp"
+#include "ConfigTokenizer.hpp"
 
 class ConfigValidator
 {
@@ -22,13 +22,14 @@ class ConfigValidator
         static void validate(const HttpConfig& config);
         static bool isValidMethod(const std::string& method);
         static bool isValidStatus(int code);
+        static bool isValidRedirectCode(int code);
         static bool isValidIP(const std::string& ip);
         static bool isValidPort(const std::string& port);
         static bool isValidHostname(const std::string& hostname);
         static bool isReserved(const std::string& word);
         static bool isBlock(const std::string& token);
         static bool isDigits(const std::string& str);
-        static void checkValue(const Tokenizer& tokenizer, const std::string& directive);
+        static void checkValue(const ConfigTokenizer& ConfigTokenizer, const std::string& directive);
         static void validateMethod(const std::string& method);
         static bool isValidString(const std::string& value, const std::string& allowedChars);
         static void validateContext(const ConfigContext& ctx);

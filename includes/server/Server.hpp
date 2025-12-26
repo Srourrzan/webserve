@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
+/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/23 15:19:09 by rsrour           ###   ########.fr       */
+/*   Updated: 2025/12/26 21:56:03 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,23 +20,26 @@
 #include <fcntl.h>    
 #include <netdb.h>
 #include <sys/types.h>
-#include "ConfigStructures.hpp"
+#include "ConfigValidator.hpp"
+
 #include <poll.h>
 #include <arpa/inet.h>
+#include <ctime>
 
 #define BUFFER_SIZE 4096
+#define POLL_TIMEOUT 1000
+#define CLIENT_TIMEOUT 300
 
 struct Socket
 {
-  int fd;
-  std::string host;
-  int port;
-  std::string buffer;
-  size_t totalSent;
-  std::string _out; //serialized response to send
-  int _parsed_requrest_state;
+    int fd;
+    std::string host;
+    int port;
+    int listenFd;
+    std::string buffer;
+    std::time_t lastActivity;
+    size_t totalSent;
 };
-
 
 class Server
 {
@@ -54,6 +57,7 @@ class Server
         void setNonBlocking(int fd);
         void addToPoll(int fd, short events);
         void initPollFds();
+        void checkClientTimeouts();
         void changePollEvent(int fd, short events);
         void readFromClient(Socket& client);
         bool requestIsComplete(const std::string& buffer);
@@ -62,10 +66,11 @@ class Server
         void handleListenSocket(size_t& index);
         void handleClientSocket(size_t& index);
         Socket* findSocket(std::vector<Socket>& sockets, int fd);
+        bool isDuplicateSocket(const std::string& host, int port) const;
         void fillListenSockets(const HttpConfig& config);
         void initListenSockets();
         void acceptClient(int listenFd);
-        void addClientSocket(int clientFd, struct sockaddr_in& clientAddr);
+        void addClientSocket(int clientFd, int listenFd);
     public:
         Server(const HttpConfig& config);
         ~Server();

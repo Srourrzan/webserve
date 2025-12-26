@@ -1,23 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Tokenizer.hpp                                      :+:      :+:    :+:   */
+/*   ConfigConfigTokenizer.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
+/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/11 17:15:47 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/23 17:10:31 by rsrour           ###   ########.fr       */
+/*   Updated: 2025/12/26 18:41:05 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef TOKENIZER_HPP
-#define TOKENIZER_HPP
+#ifndef ConfigTokenizer_HPP
+#define ConfigTokenizer_HPP
 
 #include "webserv.hpp"
 
-class Tokenizer
+class ConfigTokenizer
 {
-private:
+    private:
         std::vector<std::string> tokens;
         size_t pos;
         
@@ -25,16 +25,16 @@ private:
         std::string addSpacesBetweenSymbol(const std::string& line);
         std::string stripQuotes(const std::string& token);
         
-public:
-        Tokenizer();
+        public:
+        ConfigTokenizer();
         
         void tokenizeFile(const std::string& filename);
         std::vector<std::string>& getTokens();
         bool hasMore() const;
-        std::string peek() const; //return element without moving
-        std::string consume(); //returne the element, and move to the next element
+        std::string peek() const;
+        std::string consume();
         std::string consumeValue();
-        void expect(const std::string& expected);// I pass to it what I expeect after this token, an it cmpares if it's the expected one or not.
+        void expect(const std::string& expected);
 };
 
 #endif

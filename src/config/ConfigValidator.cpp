@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 23:47:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/19 20:23:13 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/27 01:17:02 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,12 +19,12 @@ static void compareServers(const ServerConfig& s1, const ServerConfig& s2)
         throw std::runtime_error("Duplicate server: same listen address and same server_name");
 }
 
-void ConfigValidator::checkValue(const Tokenizer& tokenizer, const std::string& directive)
+void ConfigValidator::checkValue(const ConfigTokenizer& ConfigTokenizer, const std::string& directive)
 {
-    if (!tokenizer.hasMore() || ConfigValidator::isBlock(tokenizer.peek()))
+    if (!ConfigTokenizer.hasMore() || ConfigValidator::isBlock(ConfigTokenizer.peek()))
         throw std::runtime_error(directive + " directive requires a value (missing value before ';')");
-    if (isReserved(tokenizer.peek()))
-        throw std::runtime_error("Cannot use directive '" + tokenizer.peek() + "' as value for " + directive);
+    if (isReserved(ConfigTokenizer.peek()))
+        throw std::runtime_error("Cannot use directive '" + ConfigTokenizer.peek() + "' as value for " + directive);
 }
 
 bool ConfigValidator::isValidMethod(const std::string& method)
@@ -34,15 +34,16 @@ bool ConfigValidator::isValidMethod(const std::string& method)
 
 bool ConfigValidator::isValidStatus(int code)
 {
-    return (code == 200 || code == 201 || code == 204 ||
-            code == 301 || code == 302 || code == 303 || code == 304 || 
-            code == 307 || code == 308 ||
-            code == 400 || code == 401 || code == 403 || code == 404 || 
-            code == 405 || code == 406 || code == 408 || code == 409 || 
-            code == 410 || code == 411 || code == 413 || code == 414 || 
-            code == 415 || code == 429 ||
-            code == 500 || code == 501 || code == 502 || code == 503 || 
-            code == 504 || code == 505);
+    return (code == 200 ||                                    
+            code == 300 || code == 302 ||                   
+            code == 400 || code == 404 || code == 405 ||    
+            code == 411 || code == 413 || code == 414 ||                    
+            code == 501 || code == 505);                   
+}
+
+bool ConfigValidator::isValidRedirectCode(int code)
+{
+    return (code == 300 || code == 301 || code == 302);
 }
 
 bool ConfigValidator::isReserved(const std::string& word)
