@@ -4,24 +4,16 @@ CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
 # Include directories
-INCLUDES = -I./includes -I./includes/config -I./includes/server -I./includes/utils -I./includes/http
+INCLUDES = -I./includes -I./includes/config -I./includes/server -I./includes/utils -I./includes/http -I./includes/http/httpRequest
 
 # Directories
 OBJ_DIR = obj
 
-# Source files
-SRCS = src/webserv.cpp \
-       src/config/ConfigTokenizer.cpp \
-       src/config/ConfigValidator.cpp \
-       src/config/ConfigParser.cpp \
-       src/config/ConfigStructures.cpp \
-       src/server/Server.cpp \
-       src/http/HttpRequest.cpp \
-       src/http/HttpResponse.cpp \
-       src/utils/utils.cpp
+# Find all .cpp files recursively in src/
+SRCS = $(shell find src -name '*.cpp')
 
-# Object files (in obj directory)
-OBJS = $(SRCS:src/%.cpp=$(OBJ_DIR)/%.o)
+# Map each .cpp file in src/ to a .o file in obj/ with the same subdirectory structure
+OBJS = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
 # Default target
 all: $(NAME)

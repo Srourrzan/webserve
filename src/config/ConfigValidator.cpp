@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 23:47:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 01:17:02 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/28 18:57:16 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,8 @@ void ConfigValidator::checkValue(const ConfigTokenizer& ConfigTokenizer, const s
     if (!ConfigTokenizer.hasMore() || ConfigValidator::isBlock(ConfigTokenizer.peek()))
         throw std::runtime_error(directive + " directive requires a value (missing value before ';')");
     if (isReserved(ConfigTokenizer.peek()))
-        throw std::runtime_error("Cannot use directive '" + ConfigTokenizer.peek() + "' as value for " + directive);
+        throw std::runtime_error("Cannot use directive '" +
+             ConfigTokenizer.peek() + "' as value for " + directive);
 }
 
 bool ConfigValidator::isValidMethod(const std::string& method)
@@ -197,7 +198,8 @@ void ConfigValidator::validateServer(const ServerConfig& srv)
         for (size_t j = 0; j < name.length(); j++)
         {
             if (name[j] == '*' && j != 0 && j != name.length() - 1)
-                throw std::runtime_error("Invalid server_name: " + name + " (* only at start or end)");
+                throw std::runtime_error("Invalid server_name: " + name +
+                     " (* only at start or end)");
         }
     }    
     validateContext(srv.ctx);

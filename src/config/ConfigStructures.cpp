@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 01:17:03 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/30 21:57:26 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void ConfigContext::applyDefaults()
     if (root.empty())
         root = "./www";
     if (index.empty())
-        index.push_back("index.html");
+        index.push_back("/html/index.html");
     if (clientMaxBodySize.empty())
     {
         std::ostringstream oss;
@@ -47,22 +47,16 @@ void ConfigContext::applyDefaults()
     }
     if (autoIndex == -1)
         autoIndex = 0;    
-    if (errorPages.find(400) == errorPages.end())
-        errorPages[400] = root + "/error_pages/400.html";
-    if (errorPages.find(404) == errorPages.end())
-        errorPages[404] = root + "/error_pages/404.html";
-    if (errorPages.find(405) == errorPages.end())
-        errorPages[405] = root + "/error_pages/405.html";
-    if (errorPages.find(411) == errorPages.end())
-        errorPages[411] = root + "/error_pages/411.html";
-    if (errorPages.find(413) == errorPages.end())
-        errorPages[413] = root + "/error_pages/413.html";
-    if (errorPages.find(414) == errorPages.end())
-        errorPages[414] = root + "/error_pages/414.html";
-    if (errorPages.find(501) == errorPages.end())
-        errorPages[501] = root + "/error_pages/501.html";
-    if (errorPages.find(505) == errorPages.end())
-        errorPages[505] = root + "/error_pages/505.html";
+    static const int supportedErrorCodes[] = {
+        400, 403, 404, 405, 409, 413, 414, 500, 501, 505};
+    for (size_t i = 0; i < sizeof(supportedErrorCodes)/sizeof(supportedErrorCodes[0]); ++i) {
+        int code = supportedErrorCodes[i];
+        if (errorPages.find(code) == errorPages.end()) {
+            std::ostringstream oss;
+            oss  << "/html/error_pages/" << code << ".html";
+            errorPages[code] = oss.str();
+        }
+    }
 }
 
 ListenConfig::ListenConfig() : port(8080)
@@ -119,9 +113,7 @@ void ServerConfig::applyDefaults()
 void HttpConfig::createDefaultConfig()
 {
     ServerConfig defaultServer;
-    LocationConfig defaultLocation;
     
-    defaultServer.locations.push_back(defaultLocation);
     defaultServer.applyDefaults();
     servers.push_back(defaultServer);
 }
@@ -156,7 +148,8 @@ bool ServerConfig::operator()(ConfigParser* parser, const std::string& directive
     return false;
 }
 
-ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader, std::string& localIp, int localPort) const
+const ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader,
+    const std::string& localIp, const int localPort) const
 {
     std::string hostname = hostHeader;
     size_t colonPos = hostHeader.find(':');
@@ -165,13 +158,13 @@ ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader, std::s
     ServerConfig* defServer = NULL;
     for (size_t i = 0; i < servers.size(); ++i)
     {
-        const ServerConfig& srv = servers[i];
+        const ServerConfig& srv = servers[i];      
         for (size_t j = 0; j < srv.listen.size(); ++j)
         {
             const ListenConfig& lst = srv.listen[j];
             if (lst.port != localPort)
                 continue;
-            if (lst.host != localIp && lst.host != "0.0.0.0")
+            if (lst.host != "0.0.0.0" && lst.host != localIp)
                 continue;
             if (!defServer)
                 defServer = const_cast<ServerConfig*>(&srv);
@@ -187,18 +180,20 @@ ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader, std::s
     return NULL;
 }
 
-const LocationConfig &ServerConfig::findLocationByUri(const std::string& uri) const
+const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) const
 {
     const LocationConfig *bestMatch = NULL;
     const LocationConfig *defaultMatch = NULL;
     size_t bestLength = 0;
-    
+
     for (size_t i = 0; i < locations.size(); i++)
     {
         const LocationConfig& loc = locations[i];
         const std::string& path = loc.path;
         if (path == "/")
             defaultMatch = &loc;
+        if (uri == path)
+            return &loc;
         if (uri.compare(0, path.length(), path) == 0 && path.length() > bestLength)
         {
             if (uri.length() != path.length() && uri[path.length()] != '/')
@@ -207,9 +202,11 @@ const LocationConfig &ServerConfig::findLocationByUri(const std::string& uri) co
             bestMatch = &loc;
         }
     }
-    if (!bestMatch)
-        return *defaultMatch;
-    return *bestMatch;
+    if (bestMatch)
+        return bestMatch;
+    if (defaultMatch)
+        return defaultMatch;
+    return NULL;
 }
 
 bool LocationConfig::operator()(ConfigParser* parser, const std::string& directive)

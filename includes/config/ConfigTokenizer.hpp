@@ -1,19 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ConfigConfigTokenizer.hpp                                :+:      :+:    :+:   */
+/*   ConfigTokenizer.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/11 17:15:47 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/26 18:41:05 by dikhalil         ###   ########.fr       */
+/*   Created: 2025/12/28 18:58:19 by dikhalil          #+#    #+#             */
+/*   Updated: 2025/12/31 20:35:02 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef ConfigTokenizer_HPP
 #define ConfigTokenizer_HPP
 
-#include "webserv.hpp"
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <sstream>
+#include <fstream>
+#include <unistd.h>
+#include "utils.hpp"
 
 class ConfigTokenizer
 {

@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:33:22 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 00:26:57 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 20:29:14 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include "ConfigStructures.hpp"
 #include "ConfigTokenizer.hpp"
+#include <algorithm>
 
 class ConfigValidator
 {

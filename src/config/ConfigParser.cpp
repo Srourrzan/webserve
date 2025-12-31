@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:36:34 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 00:41:35 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/28 18:56:14 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -194,7 +194,8 @@ void ConfigParser::parseReturn(LocationConfig& location)
     if (!validator.isValidRedirectCode(location.redirectCode))
     {
         std::ostringstream oss;
-        oss << "return directive only supports redirect codes (300, 301, 302), got: " << location.redirectCode;
+        oss << "return directive only supports redirect codes (300, 301, 302), got: " 
+        << location.redirectCode;
         throw std::runtime_error(oss.str());
     }
     
@@ -205,7 +206,8 @@ void ConfigParser::parseReturn(LocationConfig& location)
     tokenizer.expect(";");
 }
 
-void ConfigParser::parseString(const std::string& directive, std::vector<std::string>* target, std::string *single)
+void ConfigParser::parseString(const std::string& directive, std::vector<std::string>* target, 
+    std::string *single)
 {
     tokenizer.consume();
     ConfigValidator::checkValue(tokenizer, directive);
@@ -237,7 +239,8 @@ void ConfigParser::parseBool(const std::string& directive, int& target)
     else if (val == "off")
         target = 0;
     else
-        throw std::runtime_error("Invalid value for " + directive + ": " + val + ". Expected 'on' or 'off'.");
+        throw std::runtime_error("Invalid value for " + directive + ": " + val 
+            + ". Expected 'on' or 'off'.");
     tokenizer.expect(";");
 }
 

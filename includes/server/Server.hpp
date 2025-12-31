@@ -6,25 +6,29 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/26 21:56:03 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 20:35:52 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include "webserv.hpp"
+#include <ctime>
+#include <string>
+#include <vector>
+#include <map>
 #include <unistd.h>
 #include <sys/socket.h> 
 #include <netinet/in.h> 
-#include <fcntl.h>    
+#include <fcntl.h>   
+#include <errno.h>
+#include <iostream>
+#include <cstring> 
 #include <netdb.h>
 #include <sys/types.h>
-#include "ConfigValidator.hpp"
-
 #include <poll.h>
 #include <arpa/inet.h>
-#include <ctime>
+#include "ConfigValidator.hpp"
 
 #define BUFFER_SIZE 4096
 #define POLL_TIMEOUT 1000

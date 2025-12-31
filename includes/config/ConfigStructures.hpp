@@ -6,14 +6,16 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:38:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 00:57:45 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 20:25:18 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CONFIG_STRUCTURES_HPP
 #define CONFIG_STRUCTURES_HPP
 
-#include "webserv.hpp"
+#include <string>
+#include <vector>
+#include <map>
 
 struct ConfigContext
 {
@@ -64,7 +66,7 @@ struct ServerConfig
     
     ServerConfig();
     void applyDefaults();
-    const LocationConfig &findLocationByUri(const std::string& url) const;
+    const LocationConfig* findLocationByUri(const std::string& url) const;
     bool operator()(class ConfigParser* parser, const std::string& directive);
 };
 
@@ -75,8 +77,8 @@ struct HttpConfig
     
     HttpConfig();
     void createDefaultConfig();
-    ServerConfig* findServerByHost(const std::string& hostHeader,
-                                   std::string& localIp, int localPort) const;
+    const ServerConfig* findServerByHost(const std::string& hostHeader,
+                                   const std::string& localIp, const int localPort) const;
     bool operator()(class ConfigParser* parser, const std::string& directive);
 };
 

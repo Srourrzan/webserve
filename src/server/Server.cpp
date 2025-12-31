@@ -6,13 +6,12 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/27 01:29:28 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 20:35:36 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "HttpRequest.hpp"
-#include <errno.h>
 
 Server::Server(const HttpConfig& config) : _config(config)
 {
@@ -22,14 +21,14 @@ Server::Server(const HttpConfig& config) : _config(config)
     initListenSockets();
     
     std::cout << "===========================\n";
-    std::cout << "Server started successfully!\n";
+    std::cout << "\nServer started successfully!\n";
     std::cout << "Listening on:\n";
     for (size_t i = 0; i < listenSockets.size(); i++)
     {
         std::cout << listenSockets[i].host << ":" 
                   << listenSockets[i].port << "\n";
     }
-    std::cout << "===========================\n";
+    std::cout << "\n===========================\n";
 }
 
 Server::~Server()
@@ -242,13 +241,13 @@ bool Server::requestIsComplete(const std::string& buffer)
         return true;
     if (header.find("POST ") == 0)
     {
-        size_t pos = header.find("Content-Length:");
+        size_t pos = header.find("Content-Length: ");
         if (pos != std::string::npos)
         {
             unsigned long clientLen = strToUL(header.substr(pos + 15));
             return body.size() >= clientLen;
         }
-        if (header.find("Transfer-Encoding: chunked") != std::string::npos)
+        if (header.find("Transfer-Encoding: ") != std::string::npos)
             return body.find("0\r\n\r\n") != std::string::npos;
     }
     return false;
@@ -314,9 +313,9 @@ void Server::readFromClient(Socket& client)
     client.buffer.append(buffer, bytesRead);
     if (requestIsComplete(client.buffer))
     {
-        std::cout << "\n========== Received Request ==========\n";
+        std::cout << "\n========== Received Request ==========\n\n";
         std::cout << client.buffer;
-        std::cout << "======================================\n" << std::endl;
+        std::cout << "======================================\n";
         
         Socket *ls = findSocket(listenSockets, client.listenFd);
         std::string localIp;
@@ -327,9 +326,20 @@ void Server::readFromClient(Socket& client)
             localPort = ls->port;
         }
         HttpRequest request(_config, client.buffer, localIp, localPort);
-        RequestStatus status = request.isValidRequest();
-        std::cout << "Request validation status: " << status << std::endl;
-        
+        std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
+        std::cout << "Status: " << request.getStatus() << std::endl;
+        std::cout << "Method: " << request.getMethod() << std::endl;
+        std::cout << "URI: " << request.getUri() << std::endl;
+        std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
+        std::cout << "Redirect Code: " << request.getRedirectCode() << std::endl;
+        std::cout << "Redirect URI: " << request.getRedirectUri() << std::endl;
+        std::cout << "Final Path: " << request.getFinalPath() << std::endl;
+        std::cout << "Headers:" << std::endl;
+        for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
+            std::cout << "  " << it->first << ": " << it->second << std::endl;
+        }
+        std::cout << "Body: [" << request.getBody() << "]\n";
+        std::cout << "\n============================\n" << std::endl;
         changePollEvent(client.fd, POLLOUT);
     }
 }
@@ -369,12 +379,9 @@ void Server::writeToClient(Socket& client)
         client.totalSent = 0; 
         client.buffer.clear();
         changePollEvent(client.fd, POLLIN);
+        // if (request.getHeaders().count("Connection") && request.getHeaders().at("Connection") == "close")
+        //         closeSocket(clientSockets, client.fd);
     }
-    else
-    {
-        std::cout << "Partial send: " << client.totalSent << "/" << response.size() << std::endl;
-    }
-    // closeSocket(clientSockets, client.fd); IF Connection keep alive don't close
 }
 
 void Server::handleClientSocket(size_t& index)

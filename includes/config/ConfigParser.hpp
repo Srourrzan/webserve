@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 00:00:00 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/26 18:52:28 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 20:33:46 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #define CONFIG_PARSER_HPP
 
 #include "ConfigValidator.hpp"
+#include <stdexcept>
+#include <sstream>
 
 class ConfigParser
 {

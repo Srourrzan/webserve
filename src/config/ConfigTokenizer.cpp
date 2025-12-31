@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ConfigTokenizer.cpp                                      :+:      :+:    :+:   */
+/*   ConfigTokenizer.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/12/11 17:15:41 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/20 20:30:30 by dikhalil         ###   ########.fr       */
+/*   Created: 2025/12/28 18:56:43 by dikhalil          #+#    #+#             */
+/*   Updated: 2025/12/31 20:34:50 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,8 @@ std::string ConfigTokenizer::stripQuotes(const std::string& token)
 
 void ConfigTokenizer::tokenizeFile(const std::string& filename)
 {
+    if (access(filename.c_str(), R_OK) != 0)
+        throw std::runtime_error("No read permission for config file " + filename);
     std::ifstream configFile(filename.c_str());
     if (!configFile.is_open())
         throw std::runtime_error("Could not open config file " + filename);
