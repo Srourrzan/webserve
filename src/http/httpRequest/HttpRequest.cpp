@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 21:00:30 by dikhalil         ###   ########.fr       */
+/*   Updated: 2025/12/31 21:19:20 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,7 @@ HttpRequest::HttpRequest(const HttpRequest& other)
       redirectUri(other.redirectUri),
       redirectCode(other.redirectCode)
 {}
+
 void HttpRequest::processRawRequest()
 {
     status = parseRequest();
