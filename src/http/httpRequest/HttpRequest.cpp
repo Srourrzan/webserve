@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 21:19:20 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:52:02 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,58 +51,65 @@ HttpRequest::HttpRequest(const HttpRequest& other)
 
 void HttpRequest::processRawRequest()
 {
-    status = parseRequest();
+    parseRequest();
     if (status != REQ_OK)
         return;
 
-    status = validateRequest();
+    validateRequest();
     if (status != REQ_OK)
         return;
 
-    status = handleRequest();
+    handleRequest();
     return;
 }
 
-RequestStatus HttpRequest::parseRequest()
+void HttpRequest::parseRequest()
 {
     HttpRequestParser parser(request);
-    RequestStatus status = parser.parse();
-    if (status != REQ_OK)
-        return status;
-
+    status = parser.parse();
     method = parser.getMethod();
     uri = parser.getUri();
     httpVersion = parser.getHttpVersion();
     headers = parser.getHeaders();
     body = parser.getBody();
-
-    return REQ_OK;
+    if (status != REQ_OK)
+        handleErrorPageIfNeeded();
 }
 
-RequestStatus HttpRequest::validateRequest()
+void HttpRequest::validateRequest()
 {
     HttpRequestValidator validator(*this);
-    RequestStatus status = validator.validate();
-    if (status != REQ_OK)
-        return status;
-
+    status = validator.validate();
     server = validator.getServer();
     location = validator.getLocation();
     body = validator.getBody();
-    return REQ_OK;
+    if (status >= 300 && status < 400)
+    {
+        redirectCode = validator.getRedirectCode();
+        redirectUri = validator.getRedirectUri();
+    }
+    if (status != REQ_OK)
+        handleErrorPageIfNeeded();
 }
 
-RequestStatus HttpRequest::handleRequest()
+void HttpRequest::handleRequest()
 {
     HttpRequestHandler handler(*this);
-    RequestStatus status = handler.handleRequest();
+    status = handler.handleRequest();
     finalPath = handler.getFinalPath();
+    if (status != REQ_OK)
+        handleErrorPageIfNeeded();
+}
+
+void HttpRequest::handleErrorPageIfNeeded()
+{
+    HttpRequestHandler handler(*this);
+
     if (status >= 400)
     {
         handler.setErrorPagePath();
         finalPath = handler.getFinalPath();
     }
-    return status;
 }
 
 const std::string& HttpRequest::getMethod() const

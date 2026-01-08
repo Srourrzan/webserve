@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:58:15 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:38:16 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,13 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
 {
     body = req.getBody();
     location = req.getLocation();
-    root = location->ctx.root;
-    path = buildPath(root, location->path, req.getUri());
-    cgiBin = location->ctx.cgiBinPath;
-    uploadPath = location->uploadPath;
+    if (location)
+    {
+        root = location->ctx.root;
+        path = buildPath(root, location->path, req.getUri());
+        cgiBin = location->ctx.cgiBinPath;
+        uploadPath = location->uploadPath;
+    }
 }
 
 RequestStatus HttpRequestHandler::handleRequest()
@@ -88,7 +91,10 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
     if (!hasAccess(dirPath, R_OK | X_OK))
         return REQ_FORBIDDEN;
     if (location->ctx.autoIndex)
+    {       
+        finalPath = dirPath;
         return REQ_OK;
+    }
     return REQ_FORBIDDEN;
 }
 
@@ -177,8 +183,13 @@ void HttpRequestHandler::setErrorPagePath()
 {
     std::string r = (req.getLocation() ? req.getLocation()->ctx.root : 
     (req.getServer() ? req.getServer()->ctx.root : req.getHttpConfig().ctx.root));
-
+    
     if (findErrorPage(req.getLocation(), req.getStatus(), r, finalPath)) return;
     if (findErrorPage(req.getServer(), req.getStatus(), r, finalPath)) return;
     if (findErrorPage(&req.getHttpConfig(), req.getStatus(), r, finalPath)) return;
+}
+
+const std::string& HttpRequestHandler::getFinalPath() const
+{
+    return finalPath;
 }

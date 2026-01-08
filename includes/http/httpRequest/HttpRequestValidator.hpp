@@ -6,13 +6,14 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:04:05 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:44:05 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:48:13 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "RequestStatus.hpp"
 #include "HttpRequest.hpp"
 #include "utils.hpp"
+
 
 class HttpRequestValidator
 {
@@ -23,6 +24,8 @@ class HttpRequestValidator
         const std::string& getBody() const;
         const ServerConfig* getServer() const;
         const LocationConfig* getLocation() const;
+        short getRedirectCode() const;
+        const std::string& getRedirectUri() const;
 
     private:
         const HttpRequest& req;

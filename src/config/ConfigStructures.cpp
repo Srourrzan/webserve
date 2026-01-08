@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/30 21:57:26 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 20:43:32 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ void ConfigContext::applyDefaults()
     if (root.empty())
         root = "./www";
     if (index.empty())
-        index.push_back("/html/index.html");
+        index.push_back("index.html");
     if (clientMaxBodySize.empty())
     {
         std::ostringstream oss;

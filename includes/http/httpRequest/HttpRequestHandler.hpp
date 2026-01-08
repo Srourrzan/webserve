@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:32:41 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:36:39 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ class HttpRequestHandler
         HttpRequestHandler(HttpRequest& req);
 
         RequestStatus handleRequest();
+        const std::string& getFinalPath() const;
         void setErrorPagePath();
-        const std::string& getFinalPath() const { return finalPath; }
 
     private:
         HttpRequest& req;
@@ -54,7 +54,8 @@ class HttpRequestHandler
         bool findErrorPage(const T* block, int status, const std::string& root, std::string& outPath)
         {
             if (!block)
-                return false;
+                return false;   
+
             typename std::map<int, std::string>::const_iterator it = block->ctx.errorPages.find(status);
             if (it != block->ctx.errorPages.end())
             {

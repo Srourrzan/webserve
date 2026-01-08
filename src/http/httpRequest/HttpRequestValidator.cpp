@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:06:52 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:44:56 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:48:34 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,7 +172,8 @@ bool HttpRequestValidator::unchunkBody(std::string &body)
 
         std::vector<char> buffer(chunkSize);
         stream.read(&buffer[0], chunkSize);
-        if (stream.gcount() != (std::streamsize)chunkSize) return false;
+        if (stream.gcount() != (std::streamsize)chunkSize)
+            return false;
 
         unchunked.write(&buffer[0], chunkSize);
         if (unchunked.fail())
@@ -197,4 +198,14 @@ const ServerConfig* HttpRequestValidator::getServer() const
 const LocationConfig* HttpRequestValidator::getLocation() const
 {
     return location;
+}
+
+short HttpRequestValidator::getRedirectCode() const
+{
+    return redirectCode;
+}
+
+const std::string& HttpRequestValidator::getRedirectUri() const
+{
+    return redirectUri;
 }
