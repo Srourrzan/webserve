@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/01 14:13:57 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/10 16:21:31 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,7 @@ Server::Server(const HttpConfig& config) : _config(config)
     
     std::cout << "===========================\n";
     std::cout << "\nServer started successfully!\n";
-    std::cout << "Listening on:\n";
-    for (size_t i = 0; i < listenSockets.size(); i++)
-    {
-        std::cout << listenSockets[i].host << ":" 
-                  << listenSockets[i].port << "\n";
-    }
+		std::cout << *this;
     std::cout << "\n===========================\n";
 }
 
@@ -386,71 +381,90 @@ void Server::writeToClient(Socket& client)
 
 void Server::handleClientSocket(size_t& index)
 {
-    int fd = pollFds[index].fd;
-    Socket *client = findSocket(clientSockets, fd);
-    
-    if (!client)
-    {
-        pollFds.erase(pollFds.begin() + index);
-        index--;
-        return;
-    }
-    if (pollFds[index].revents & (POLLERR | POLLHUP))
-    {
-        handleSocketError(fd, index, false);
-        return;
-    }
-    if (pollFds[index].revents & POLLIN)
-    {
-        readFromClient(*client);
-        client = findSocket(clientSockets, fd);
-        if (!client)
-            return;
-    }
-    if (pollFds[index].revents & POLLOUT)
-        writeToClient(*client);
+	int fd = pollFds[index].fd;
+	Socket *client = findSocket(clientSockets, fd);
+	
+	if (!client)
+	{
+		pollFds.erase(pollFds.begin() + index);
+		index--;
+		return;
+	}
+	if (pollFds[index].revents & (POLLERR | POLLHUP))
+	{
+		handleSocketError(fd, index, false);
+		return;
+	}
+	if (pollFds[index].revents & POLLIN)
+	{
+		readFromClient(*client);
+		client = findSocket(clientSockets, fd);
+		if (!client)
+			return;
+	}
+	if (pollFds[index].revents & POLLOUT)
+		writeToClient(*client);
 }
 
 void Server::checkClientTimeouts()
 {
-    time_t now = time(NULL);
-    for (size_t i = 0; i < clientSockets.size(); i++)
-    {
-        if (now - clientSockets[i].lastActivity > CLIENT_TIMEOUT)
-        {
-            closeSocket(clientSockets, clientSockets[i].fd);
-            i--; 
-        }
-    }
+	time_t now = time(NULL);
+	for (size_t i = 0; i < clientSockets.size(); i++)
+	{
+		if (now - clientSockets[i].lastActivity > CLIENT_TIMEOUT)
+		{
+			closeSocket(clientSockets, clientSockets[i].fd);
+			i--; 
+		}
+	}
 }
 
 void Server::run()
 {
-    initPollFds();
-    while (true)
-    {
-        if (pollFds.empty())
-            throw std::runtime_error("Server Error: No sockets to poll");
-        int ret = poll(&pollFds[0], pollFds.size(), POLL_TIMEOUT);
-        if (ret == -1)
-        {
-            closeAllSockets(clientSockets);
-            closeAllSockets(listenSockets);
-            throw std::runtime_error("Server Error: poll failed");
-        }
-        if (ret == 0)
-        {
-            checkClientTimeouts();
-            continue;
-        }
-        for (size_t i = 0; i < pollFds.size(); i++)
-        {
-            if (pollFds[i].revents == 0)
-                continue;
-            if (findSocket(listenSockets, pollFds[i].fd) != NULL)
-                handleListenSocket(i);
-            else
-                handleClientSocket(i);
-        }
-    }
+	initPollFds();
+	while (true)
+	{
+		if (pollFds.empty())
+			throw std::runtime_error("Server Error: No sockets to poll");
+		int ret = poll(&pollFds[0], pollFds.size(), POLL_TIMEOUT);
+		if (ret == -1)
+		{
+			closeAllSockets(clientSockets);
+			closeAllSockets(listenSockets);
+			throw std::runtime_error("Server Error: poll failed");
+		}
+		if (ret == 0)
+		{
+			checkClientTimeouts();
+			continue;
+		}
+		for (size_t i = 0; i < pollFds.size(); i++)
+		{
+			if (pollFds[i].revents == 0)
+				continue;
+			if (findSocket(listenSockets, pollFds[i].fd) != NULL)
+				handleListenSocket(i);
+			else
+				handleClientSocket(i);
+		}
+	}
+}
+
+std::vector<Socket> Server::getListenSockets() const
+{
+	return (this->listenSockets);
+}
+
+std::ostream & operator<< (std::ostream & out, const Server & data)
+{
+	std::vector<Socket> listenSockets;
+
+	listenSockets = data.getListenSockets();
+	out << "Servet listening on:\n";
+	for (size_t i = 0; i < listenSockets.size(); i++)
+	{
+		out << listenSockets[i].host << ":" 
+				<< listenSockets[i].port << "\n";
+	}
+	return(out);
 }

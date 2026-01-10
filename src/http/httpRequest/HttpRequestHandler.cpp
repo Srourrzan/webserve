@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequestHandler.cpp                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:58:15 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/10 16:20:57 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ RequestStatus HttpRequestHandler::handleCgi()
     if (!hasAccess(path, X_OK))
         return REQ_FORBIDDEN;
     finalPath = path;
+    
     // cgi execuation here
     return REQ_OK;
 }
@@ -158,27 +159,35 @@ RequestStatus HttpRequestHandler::writeToFile(const std::string& body)
 
 RequestStatus HttpRequestHandler::handlePost()
 {
-    if (!location->uploadEnabled)
-        return REQ_METHOD_NOT_ALLOWED;
-    if (path.find(uploadPath) != 0)
-        return REQ_FORBIDDEN;
-    std::string fileName = path.substr(uploadPath.length());
-    if (isValidFileName(fileName))
-        return REQ_BAD_REQUEST;
-    if (!dirExists(joinPath(root, uploadPath)) || 
-        !hasAccess(joinPath(root, uploadPath), W_OK | X_OK))
-        return REQ_FORBIDDEN; 
-    if (fileExists(path) && !hasAccess(path, W_OK))
-        return REQ_CONFLICT; 
-    return writeToFile(body);
+	if (!location->uploadEnabled)
+		return REQ_METHOD_NOT_ALLOWED;
+	if (path.find(uploadPath) != 0)
+		return REQ_FORBIDDEN;
+	std::string fileName = path.substr(uploadPath.length());
+	if (isValidFileName(fileName))
+		return REQ_BAD_REQUEST;
+	if (!dirExists(joinPath(root, uploadPath)) || 
+		!hasAccess(joinPath(root, uploadPath), W_OK | X_OK))
+		return REQ_FORBIDDEN; 
+	if (fileExists(path) && !hasAccess(path, W_OK))
+		return REQ_CONFLICT; 
+	return writeToFile(body);
 }
 
 void HttpRequestHandler::setErrorPagePath()
 {
-    std::string r = (req.getLocation() ? req.getLocation()->ctx.root : 
-    (req.getServer() ? req.getServer()->ctx.root : req.getHttpConfig().ctx.root));
+	std::string r = (req.getLocation() ? req.getLocation()->ctx.root : 
+	(req.getServer() ? req.getServer()->ctx.root : req.getHttpConfig().ctx.root));
 
-    if (findErrorPage(req.getLocation(), req.getStatus(), r, finalPath)) return;
-    if (findErrorPage(req.getServer(), req.getStatus(), r, finalPath)) return;
-    if (findErrorPage(&req.getHttpConfig(), req.getStatus(), r, finalPath)) return;
+	if (findErrorPage(req.getLocation(), req.getStatus(), r, finalPath)) return;
+	if (findErrorPage(req.getServer(), req.getStatus(), r, finalPath)) return;
+	if (findErrorPage(&req.getHttpConfig(), req.getStatus(), r, finalPath)) return;
+}
+
+std::ostream& operator<< (std::ostream &out, const HttpRequestHandler& data)
+{
+	out << "Http request handler: \n"
+			<< "final path "
+			<< data.getFinalPath();
+	return (out);
 }

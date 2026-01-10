@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequestHandler.hpp                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:32:41 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/10 16:21:33 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <iostream>
 #include "utils.hpp"  
 #include "HttpRequest.hpp"
 #include "RequestStatus.hpp"
@@ -66,3 +67,5 @@ class HttpRequestHandler
             return false;
         }
 };
+
+std::ostream & operator<< (std::ostream & out, const HttpRequestHandler & data);
