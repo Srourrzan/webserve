@@ -6,7 +6,7 @@
 /*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/28 23:31:33 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 21:00:44 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/08 21:20:19 by dikhalil         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,8 +57,10 @@ class HttpRequest
         std::string redirectUri;
         short redirectCode;
 
-        RequestStatus parseRequest();
-        RequestStatus validateRequest();
-        RequestStatus handleRequest();
+        void parseRequest();
+        void validateRequest();
+        void handleRequest();
+        void handleErrorPageIfNeeded();
+
 };
 

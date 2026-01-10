@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 16:20:57 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/10 19:00:13 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,10 +18,13 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
 {
     body = req.getBody();
     location = req.getLocation();
-    root = location->ctx.root;
-    path = buildPath(root, location->path, req.getUri());
-    cgiBin = location->ctx.cgiBinPath;
-    uploadPath = location->uploadPath;
+    if (location)
+    {
+        root = location->ctx.root;
+        path = buildPath(root, location->path, req.getUri());
+        cgiBin = location->ctx.cgiBinPath;
+        uploadPath = location->uploadPath;
+    }
 }
 
 RequestStatus HttpRequestHandler::handleRequest()
@@ -89,7 +92,10 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
     if (!hasAccess(dirPath, R_OK | X_OK))
         return REQ_FORBIDDEN;
     if (location->ctx.autoIndex)
+    {       
+        finalPath = dirPath;
         return REQ_OK;
+    }
     return REQ_FORBIDDEN;
 }
 
@@ -190,4 +196,9 @@ std::ostream& operator<< (std::ostream &out, const HttpRequestHandler& data)
 			<< "final path "
 			<< data.getFinalPath();
 	return (out);
+}
+
+const std::string& HttpRequestHandler::getFinalPath() const
+{
+    return finalPath;
 }
