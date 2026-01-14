@@ -6,17 +6,18 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 16:21:31 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/14 19:45:34 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "utils.hpp"
 #include "Server.hpp"
 #include "HttpRequest.hpp"
 
 Server::Server(const HttpConfig& config) : _config(config)
 {
-    listenSockets.clear();
-    clientSockets.clear();
+    this->_listenSockets.clear();
+    this->_clientSockets.clear();
     fillListenSockets(_config);
     initListenSockets();
     
@@ -28,8 +29,8 @@ Server::Server(const HttpConfig& config) : _config(config)
 
 Server::~Server()
 {
-    closeAllSockets(clientSockets);
-    closeAllSockets(listenSockets);
+    closeAllSockets(this->_clientSockets);
+    closeAllSockets(this->_listenSockets);
 }
 
 void Server::closeAllSockets(std::vector<Socket>& sockets)
@@ -44,11 +45,11 @@ void Server::closeAllSockets(std::vector<Socket>& sockets)
 
 void Server::closeSocket(std::vector<Socket>& sockets, int fd)
 {
-    for (size_t i = 0; i < pollFds.size(); i++)
+    for (size_t i = 0; i < this->_pollFds.size(); i++)
     {
-        if (pollFds[i].fd == fd)
+        if (this->_pollFds[i].fd == fd)
         {
-            pollFds.erase(pollFds.begin() + i);
+            this->_pollFds.erase(this->_pollFds.begin() + i);
             break;
         }
     }    
@@ -65,9 +66,9 @@ void Server::closeSocket(std::vector<Socket>& sockets, int fd)
 
 bool Server::isDuplicateSocket(const std::string& host, int port) const
 {
-    for (size_t i = 0; i < listenSockets.size(); i++)
+    for (size_t i = 0; i < this->_listenSockets.size(); i++)
     {
-        if (listenSockets[i].host == host && listenSockets[i].port == port)
+        if (this->_listenSockets[i].host == host && this->_listenSockets[i].port == port)
         {
             return true;
         }
@@ -88,7 +89,7 @@ void Server::fillListenSockets(const HttpConfig& config)
                 ls.host = srv.listen[j].host;
                 ls.port = srv.listen[j].port;
                 ls.fd = -1;
-                listenSockets.push_back(ls);
+                this->_listenSockets.push_back(ls);
             }
         }
     }
@@ -141,27 +142,27 @@ bool Server::setupSocket(Socket& ls, struct addrinfo* addr)
 
 void Server::initListenSockets()
 {
-    std::vector<Socket> successfulSockets;
-    for (size_t i = 0; i < listenSockets.size(); i++)
-    {
-        Socket& ls = listenSockets[i];
-        struct addrinfo* res = getAddressInfo(ls);
-        if (!res)
-            continue;
-        for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
-        {
-            Socket newSocket = ls;
-            if (setupSocket(newSocket, p))
-            {
-                successfulSockets.push_back(newSocket);
-                break;
-            }
-        }
-        freeaddrinfo(res);
-    } 
-    if (successfulSockets.empty())
-        throw std::runtime_error("No valid listening sockets could be created.");
-    listenSockets = successfulSockets;
+	std::vector<Socket> successfulSockets;
+	for (size_t i = 0; i < this->_listenSockets.size(); i++)
+	{
+		Socket& ls = this->_listenSockets[i];
+		struct addrinfo* res = getAddressInfo(ls);
+		if (!res)
+			continue;
+		for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
+		{
+			Socket newSocket = ls;
+			if (setupSocket(newSocket, p))
+			{
+				successfulSockets.push_back(newSocket);
+				break;
+			}
+		}
+		freeaddrinfo(res);
+	} 
+	if (successfulSockets.empty())
+		throw std::runtime_error("No valid listening sockets could be created.");
+	this->_listenSockets = successfulSockets;
 }
 
 void Server::setNonBlocking(int fd)
@@ -179,14 +180,14 @@ void Server::addToPoll(int fd, short events)
     pfd.fd = fd;
     pfd.events = events;
     pfd.revents = 0;
-    pollFds.push_back(pfd);
+    this->_pollFds.push_back(pfd);
 }
 
 void Server::initPollFds()
 {
-    pollFds.clear();
-    for (size_t i = 0; i < listenSockets.size(); i++)
-        addToPoll(listenSockets[i].fd, POLLIN);
+    this->_pollFds.clear();
+    for (size_t i = 0; i < this->_listenSockets.size(); i++)
+        addToPoll(this->_listenSockets[i].fd, POLLIN);
 }
 
 void Server::addClientSocket(int clientFd, int listenFd)
@@ -197,7 +198,7 @@ void Server::addClientSocket(int clientFd, int listenFd)
     cl.lastActivity = std::time(NULL);
     cl.totalSent = 0;  
     cl.buffer.clear(); 
-    clientSockets.push_back(cl);
+    this->_clientSockets.push_back(cl);
 }
 
 void Server::acceptClient(int listenFd)
@@ -216,12 +217,17 @@ void Server::acceptClient(int listenFd)
 
 Socket* Server::findSocket(std::vector<Socket>& sockets, int fd)
 {
-    for (size_t i = 0; i < sockets.size(); i++)
-    {
-        if (sockets[i].fd == fd)
-            return &sockets[i];
-    }
-    return NULL;
+	for (size_t i = 0; i < sockets.size(); i++)
+	{
+		std::cout << "socket " 
+							<< i 
+							<<  " info: "
+							<< std::endl;
+		socketInfo(&sockets[i]);
+		if (sockets[i].fd == fd)
+			return &sockets[i];
+	}
+	return NULL;
 }
 
 bool Server::requestIsComplete(const std::string& buffer)
@@ -250,11 +256,11 @@ bool Server::requestIsComplete(const std::string& buffer)
 
 void Server::changePollEvent(int fd, short events)
 {
-    for (size_t i = 0; i < pollFds.size(); i++)
+    for (size_t i = 0; i < this->_pollFds.size(); i++)
     {
-        if (pollFds[i].fd == fd)
+        if (this->_pollFds[i].fd == fd)
         {
-            pollFds[i].events = events;
+            this->_pollFds[i].events = events;
             return;
         }
     }
@@ -264,27 +270,27 @@ void Server::handleSocketError(int fd, size_t& index, bool isListen)
 {
     std::cerr << "Server Info: Closing " << (isListen ? "listen" : "client") 
               << " socket fd " << fd << " due to error/hangup." << std::endl;
-    pollFds.erase(pollFds.begin() + index);
+    this->_pollFds.erase(this->_pollFds.begin() + index);
     if (isListen)
     {
-        closeSocket(listenSockets, fd);
-        if (listenSockets.empty())
+        closeSocket(this->_listenSockets, fd);
+        if (this->_listenSockets.empty())
             throw std::runtime_error("Server Error: All listening sockets closed.");
     }
     else
-        closeSocket(clientSockets, fd);
+        closeSocket(this->_clientSockets, fd);
     index--;
 }
 
 void Server::handleListenSocket(size_t& index)
 {
-    if (pollFds[index].revents & (POLLERR | POLLHUP))
+    if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
     {
-        handleSocketError(pollFds[index].fd, index, true);
+        handleSocketError(this->_pollFds[index].fd, index, true);
         return;
     }
-    if (pollFds[index].revents & POLLIN)
-        acceptClient(pollFds[index].fd);
+    if (this->_pollFds[index].revents & POLLIN)
+        acceptClient(this->_pollFds[index].fd);
 }
 
 void Server::readFromClient(Socket& client)
@@ -295,14 +301,14 @@ void Server::readFromClient(Socket& client)
     
     if (bytesRead <= 0)
     {
-        closeSocket(clientSockets, client.fd);
+        closeSocket(this->_clientSockets, client.fd);
         return;
     }
     client.lastActivity = std::time(NULL);
     if (client.buffer.size() + bytesRead > 1048576) 
     {
         std::cerr << "Server Error: Request too large from " << client.host << std::endl;
-        closeSocket(clientSockets, client.fd);
+        closeSocket(this->_clientSockets, client.fd);
         return;
     }  
     client.buffer.append(buffer, bytesRead);
@@ -312,7 +318,7 @@ void Server::readFromClient(Socket& client)
         std::cout << client.buffer;
         std::cout << "======================================\n";
         
-        Socket *ls = findSocket(listenSockets, client.listenFd);
+        Socket *ls = findSocket(this->_listenSockets, client.listenFd);
         std::string localIp;
         int localPort = 0;
         if (ls)
@@ -361,7 +367,7 @@ void Server::writeToClient(Socket& client)
     if (sent <= 0)
     {
         std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
-        closeSocket(clientSockets, client.fd);
+        closeSocket(this->_clientSockets, client.fd);
         return;
     }
     std::cout << "Sent " << sent << " bytes to client" << std::endl;
@@ -381,39 +387,39 @@ void Server::writeToClient(Socket& client)
 
 void Server::handleClientSocket(size_t& index)
 {
-	int fd = pollFds[index].fd;
-	Socket *client = findSocket(clientSockets, fd);
+	int fd = this->_pollFds[index].fd;
+	Socket *client = findSocket(this->_clientSockets, fd);
 	
 	if (!client)
 	{
-		pollFds.erase(pollFds.begin() + index);
+		this->_pollFds.erase(this->_pollFds.begin() + index);
 		index--;
 		return;
 	}
-	if (pollFds[index].revents & (POLLERR | POLLHUP))
+	if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
 	{
 		handleSocketError(fd, index, false);
 		return;
 	}
-	if (pollFds[index].revents & POLLIN)
+	if (this->_pollFds[index].revents & POLLIN)
 	{
 		readFromClient(*client);
-		client = findSocket(clientSockets, fd);
+		client = findSocket(this->_clientSockets, fd);
 		if (!client)
 			return;
 	}
-	if (pollFds[index].revents & POLLOUT)
+	if (this->_pollFds[index].revents & POLLOUT)
 		writeToClient(*client);
 }
 
 void Server::checkClientTimeouts()
 {
 	time_t now = time(NULL);
-	for (size_t i = 0; i < clientSockets.size(); i++)
+	for (size_t i = 0; i < this->_clientSockets.size(); i++)
 	{
-		if (now - clientSockets[i].lastActivity > CLIENT_TIMEOUT)
+		if (now - this->_clientSockets[i].lastActivity > CLIENT_TIMEOUT)
 		{
-			closeSocket(clientSockets, clientSockets[i].fd);
+			closeSocket(this->_clientSockets, this->_clientSockets[i].fd);
 			i--; 
 		}
 	}
@@ -424,13 +430,13 @@ void Server::run()
 	initPollFds();
 	while (true)
 	{
-		if (pollFds.empty())
+		if (this->_pollFds.empty())
 			throw std::runtime_error("Server Error: No sockets to poll");
-		int ret = poll(&pollFds[0], pollFds.size(), POLL_TIMEOUT);
+		int ret = poll(&this->_pollFds[0], this->_pollFds.size(), POLL_TIMEOUT);
 		if (ret == -1)
 		{
-			closeAllSockets(clientSockets);
-			closeAllSockets(listenSockets);
+			closeAllSockets(this->_clientSockets);
+			closeAllSockets(this->_listenSockets);
 			throw std::runtime_error("Server Error: poll failed");
 		}
 		if (ret == 0)
@@ -438,11 +444,17 @@ void Server::run()
 			checkClientTimeouts();
 			continue;
 		}
-		for (size_t i = 0; i < pollFds.size(); i++)
+		for (size_t i = 0; i < this->_pollFds.size(); i++)
 		{
-			if (pollFds[i].revents == 0)
+      std::cout << __FILE__
+								<< ", "
+								<< __LINE__
+			 					<< ": Scoket listening"
+								<< std::endl;
+
+			if (this->_pollFds[i].revents == 0)
 				continue;
-			if (findSocket(listenSockets, pollFds[i].fd) != NULL)
+			if (findSocket(this->_listenSockets, this->_pollFds[i].fd) != NULL)
 				handleListenSocket(i);
 			else
 				handleClientSocket(i);
@@ -452,7 +464,7 @@ void Server::run()
 
 std::vector<Socket> Server::getListenSockets() const
 {
-	return (this->listenSockets);
+	return (this->_listenSockets);
 }
 
 std::ostream & operator<< (std::ostream & out, const Server & data)

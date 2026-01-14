@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 19:00:13 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/14 18:50:17 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ RequestStatus HttpRequestHandler::handleGet()
     if (!hasAccess(path, R_OK))
         return REQ_FORBIDDEN;
     finalPath = path;
-
+    std::cout << *this;
     return REQ_OK;
 }
 
