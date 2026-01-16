@@ -38,7 +38,7 @@ void ConfigContext::applyDefaults()
     if (root.empty())
         root = "./www";
     if (index.empty())
-        index.push_back("index.html");
+        index.push_back("/html/index.html");
     if (clientMaxBodySize.empty())
     {
         std::ostringstream oss;

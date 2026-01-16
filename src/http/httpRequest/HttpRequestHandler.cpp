@@ -80,7 +80,7 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
     for (size_t i = 0; i < location->ctx.index.size(); i++)
     {
-        std::string indexPath = joinPath(dirPath, location->ctx.index[i]);
+        std::string indexPath = joinPath(root, location->ctx.index[i]);
         if (fileExists(indexPath))
         {
             if (!hasAccess(indexPath, R_OK))
@@ -143,8 +143,8 @@ RequestStatus HttpRequestHandler::handleDelete(const std::string& path)
 {
     if (dirExists(path))
         return deleteDir(path);
-    if (!hasAccess(path, W_OK))
-        return REQ_FORBIDDEN;
+    // if (!hasAccess(path, W_OK))
+    //     return REQ_FORBIDDEN;
     if (remove(path.c_str()) != 0)
         return REQ_INTERNAL_SERVER_ERROR;
     return REQ_NO_CONTENT;

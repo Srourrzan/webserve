@@ -107,60 +107,89 @@ std::string intToString( int value) {
     return ss.str();     
 }
 
-std::string HttpResponse::generateAutoIndex(const std::string& path, const std::string& uri)
-{
-    std::string fullResponse;
-    fullResponse = "<html><head><title>Index of " + uri + "</title></head>";
-    fullResponse += "<body style='font-family: sans-serif; padding: 20px;'>";
-    fullResponse += "<h1>Index of " + uri + "</h1><hr><ul style='list-style: none;'>";
-    
+std::string HttpResponse::buildTree(const std::string& path, const std::string& uri) {
+    std::string html = "<ul>";
     DIR* dir = opendir(path.c_str());
-    if (dir == NULL) 
-    {
-        return "";
-    }
+    if (!dir) return "";
+        std::cout<<"khiiiiiiiiiiiiii"<<std::endl; 
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
-        if (name == ".") continue;
-        std::string link = uri;
-        if (link[link.size() - 1] != '/') link += "/";
-        link += name;
-        fullResponse += "<li><a href=\"" + link + "\">" + name + (entry->d_type == DT_DIR ? "/" : "") + "</a></li>";
-    }
+        if (name == "." || name == "..") continue;
 
+        std::string pathSep = (path[path.length() - 1] == '/') ? "" : "/";
+        std::string uriSep = (uri[uri.length() - 1] == '/') ? "" : "/";
+        
+        std::string fullPath = path + pathSep + name;
+        std::string fullUri = uri + uriSep + name;
+        std::cout<<"hiiiiiiiiiiiiii"<<std::endl; 
+        struct stat st;
+        if (stat(fullPath.c_str(), &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                  
+                html += "<li><b style='color: blue;'>[DIR] " + name + "</b>";
+                html += buildTree(fullPath, fullUri); 
+                html += "</li>";
+            } else {
+                html += "<li><a href=\"" + fullUri + "\">" + name + "</a></li>";
+            }
+        }
+    }
     closedir(dir);
-    fullResponse += "</ul><hr><p style='font-size: small;'>Webserv/1.0</p></body></html>";
+    html += "</ul>";
+    return html;
+}
+
+std::string HttpResponse::generateAutoIndex(const std::string& path, const std::string& uri) {
+    std::string content = "<html><head><title>Index of " + uri + "</title></head><body>";
     
-    return fullResponse;
-}    
+    content += "<h1> Index of " + uri + "</h1><hr>";
+            std::cout<<"iiiiiiiiiiiiii"<<std::endl; 
+
+    content += buildTree(path, uri);
+    content += "<hr></body></html>";
+    return content;
+}  
 
 void HttpResponse::buildResponse(HttpRequest& req)
 {
     this->codeStatus = req.getStatus();
     this->path = req.getFinalPath();
+    std::string physicalPath = req.getFinalPath();
     std::string ConnectionValue;
+    
     const LocationConfig* loc = req.getLocation();
+        std::cout<<"build"<<std::endl; 
 
     if(req.getRedirectCode() !=0 )
     {
+        std::cout<<"redirection"<<std::endl; 
+
         this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
         this->fullResponse += "Location: " + req.getRedirectUri()+ "\r\n"; 
         this->fullResponse += "Content-Length: 0\r\n";
         this->fullResponse += "Connection: close\r\n\r\n";
         return;
     }
-
-    else if (this->codeStatus == REQ_OK && dirExists(this->path))
+    
+    else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
     {
+                            std::cout<<"entered"<<std::endl; 
+
         if (loc != NULL && loc->ctx.autoIndex == 1)
         {
+                    std::cout<<"ooiiiiiiiiiii"<<std::endl; 
+
             this->body = generateAutoIndex(this->path, req.getUri());
         }
     }
     else
     {
+            std::cout <<this->path<<std::endl;
+
+                            std::cout<<"else"<<std::endl; 
+
         this->body = fileToString(path);
         if (this->body.empty() && this->codeStatus >= 400) {
             this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
@@ -189,5 +218,6 @@ void HttpResponse::buildResponse(HttpRequest& req)
     this->fullResponse += "Connection: " + ConnectionValue + " \r\n";   
     this->fullResponse += "\r\n";
     this->fullResponse += this->body;
+    std::cout<<fullResponse <<std::endl;
 
 }

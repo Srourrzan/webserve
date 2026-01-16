@@ -10,7 +10,8 @@ class HttpResponse{
     std::string header;
     std::string body;
     int codeStatus; //used
-    
+    std::string buildTree(const std::string& path, const std::string& uri);
+
     HttpResponse();
    ~HttpResponse() {}
     bool canReadBody() const ;

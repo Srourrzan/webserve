@@ -337,6 +337,8 @@ void Server::readFromClient(Socket& client)
         std::cout << "Body: [" << request.getBody() << "]\n";
         std::cout << "\n============================\n" << std::endl;
         HttpResponse res;//added
+                    std::cout<<"req"<<std::endl; 
+
         res.buildResponse(request);
         client.responseString = res.getFullResponse();
         
@@ -347,13 +349,13 @@ void Server::readFromClient(Socket& client)
 void Server::writeToClient(Socket& client)
 {
     std::cout << "Writing response to client fd: " << client.fd << std::endl;
-    
-    std::string response = 
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: 50\r\n"
-        "\r\n"
-        "<html><body><h1>Hello from webserv!</h1></body></html>";
+    std::string& response = client.responseString;
+    // std::string response = 
+    //     "HTTP/1.1 200 OK\r\n"
+    //     "Content-Type: text/html\r\n"
+    //     "Content-Length: 50\r\n"
+    //     "\r\n"
+    //     "<html><body><h1>Hello from webserv!</h1></body></html>";
     
     std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
     std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
