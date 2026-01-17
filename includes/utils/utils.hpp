@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 20:27:57 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 12:50:41 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 13:33:10 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 # include <sstream>
 # include <sys/stat.h>
 # include <unistd.h>
-
 # include "Server.hpp"
+struct Socket;
 
 unsigned long   strToUL(const std::string& str);
 std::string     trim(const std::string& line);

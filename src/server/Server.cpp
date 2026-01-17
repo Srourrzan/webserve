@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 13:01:10 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 15:04:10 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,8 @@
 
 Server::Server(const HttpConfig& config) : _config(config)
 {
-    listenSockets.clear();
-    clientSockets.clear();
+    this->_listenSockets.clear();
+    this->_clientSockets.clear();
     fillListenSockets(_config);
     initListenSockets();
     
@@ -29,8 +29,8 @@ Server::Server(const HttpConfig& config) : _config(config)
 
 Server::~Server()
 {
-    closeAllSockets(clientSockets);
-    closeAllSockets(listenSockets);
+    closeAllSockets(this->_clientSockets);
+    closeAllSockets(this->_listenSockets);
 }
 
 void Server::closeAllSockets(std::vector<Socket>& sockets)
@@ -143,9 +143,9 @@ bool Server::setupSocket(Socket& ls, struct addrinfo* addr)
 void Server::initListenSockets()
 {
     std::vector<Socket> successfulSockets;
-    for (size_t i = 0; i < listenSockets.size(); i++)
+    for (size_t i = 0; i < this->_listenSockets.size(); i++)
     {
-        Socket& ls = listenSockets[i];
+        Socket& ls = this->_listenSockets[i];
         struct addrinfo* res = getAddressInfo(ls);
         if (!res)
             continue;
@@ -162,7 +162,7 @@ void Server::initListenSockets()
     } 
     if (successfulSockets.empty())
         throw std::runtime_error("No valid listening sockets could be created.");
-    listenSockets = successfulSockets;
+    this->_listenSockets = successfulSockets;
 }
 
 void Server::setNonBlocking(int fd)
@@ -180,7 +180,7 @@ void Server::addToPoll(int fd, short events)
     pfd.fd = fd;
     pfd.events = events;
     pfd.revents = 0;
-    pollFds.push_back(pfd);
+    this->_pollFds.push_back(pfd);
 }
 
 void Server::initPollFds()
@@ -203,27 +203,22 @@ void Server::addClientSocket(int clientFd, int listenFd)
 
 void Server::acceptClient(int listenFd)
 {
-    int clientFd = accept(listenFd, NULL, NULL);
+	int clientFd = accept(listenFd, NULL, NULL);
 
-    if (clientFd == -1)
-    {
-        std::cerr << "Server Error: accept failed" << std::endl;
-        return;
-    }
-    setNonBlocking(clientFd);
-    addClientSocket(clientFd, listenFd);
-    addToPoll(clientFd, POLLIN);
+	if (clientFd == -1)
+	{
+		std::cerr << "Server Error: accept failed" << std::endl;
+		return;
+	}
+	setNonBlocking(clientFd);
+	addClientSocket(clientFd, listenFd);
+	addToPoll(clientFd, POLLIN);
 }
 
 Socket* Server::findSocket(std::vector<Socket>& sockets, int fd)
 {
 	for (size_t i = 0; i < sockets.size(); i++)
 	{
-		std::cout << "socket " 
-							<< i 
-							<<  " info: "
-							<< std::endl;
-		socketInfo(&sockets[i]);
 		if (sockets[i].fd == fd)
 			return &sockets[i];
 	}
@@ -232,26 +227,26 @@ Socket* Server::findSocket(std::vector<Socket>& sockets, int fd)
 
 bool Server::requestIsComplete(const std::string& buffer)
 {
-    size_t headerEnd = buffer.find("\r\n\r\n");
-    if (headerEnd == std::string::npos)
-        return false;
-    std::string header = buffer.substr(0, headerEnd);
-    std::string body   = buffer.substr(headerEnd + 4);
+	size_t headerEnd = buffer.find("\r\n\r\n");
+	if (headerEnd == std::string::npos)
+		return false;
+	std::string header = buffer.substr(0, headerEnd);
+	std::string body   = buffer.substr(headerEnd + 4);
 
-    if (header.find("GET ") == 0 || header.find("DELETE ") == 0)
-        return true;
-    if (header.find("POST ") == 0)
-    {
-        size_t pos = header.find("Content-Length: ");
-        if (pos != std::string::npos)
-        {
-            unsigned long clientLen = strToUL(header.substr(pos + 15));
-            return body.size() >= clientLen;
-        }
-        if (header.find("Transfer-Encoding: ") != std::string::npos)
-            return body.find("0\r\n\r\n") != std::string::npos;
-    }
-    return false;
+	if (header.find("GET ") == 0 || header.find("DELETE ") == 0)
+		return true;
+	if (header.find("POST ") == 0)
+	{
+		size_t pos = header.find("Content-Length: ");
+		if (pos != std::string::npos)
+		{
+			unsigned long clientLen = strToUL(header.substr(pos + 15));
+			return body.size() >= clientLen;
+		}
+		if (header.find("Transfer-Encoding: ") != std::string::npos)
+			return body.find("0\r\n\r\n") != std::string::npos;
+	}
+	return false;
 }
 
 void Server::changePollEvent(int fd, short events)
@@ -268,81 +263,81 @@ void Server::changePollEvent(int fd, short events)
 
 void Server::handleSocketError(int fd, size_t& index, bool isListen)
 {
-    std::cerr << "Server Info: Closing " << (isListen ? "listen" : "client") 
-              << " socket fd " << fd << " due to error/hangup." << std::endl;
-    this->_pollFds.erase(this->_pollFds.begin() + index);
-    if (isListen)
-    {
-        closeSocket(this->_listenSockets, fd);
-        if (this->_listenSockets.empty())
-            throw std::runtime_error("Server Error: All listening sockets closed.");
-    }
-    else
-        closeSocket(this->_clientSockets, fd);
-    index--;
+	std::cerr << "Server Info: Closing " << (isListen ? "listen" : "client") 
+						<< " socket fd " << fd << " due to error/hangup." << std::endl;
+	this->_pollFds.erase(this->_pollFds.begin() + index);
+	if (isListen)
+	{
+		closeSocket(this->_listenSockets, fd);
+		if (this->_listenSockets.empty())
+			throw std::runtime_error("Server Error: All listening sockets closed.");
+	}
+	else
+		closeSocket(this->_clientSockets, fd);
+	index--;
 }
 
 void Server::handleListenSocket(size_t& index)
 {
-    if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
-    {
-        handleSocketError(this->_pollFds[index].fd, index, true);
-        return;
-    }
-    if (this->_pollFds[index].revents & POLLIN)
-        acceptClient(this->_pollFds[index].fd);
+	if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
+	{
+		handleSocketError(this->_pollFds[index].fd, index, true);
+		return;
+	}
+	if (this->_pollFds[index].revents & POLLIN)
+		acceptClient(this->_pollFds[index].fd);
 }
 
 void Server::readFromClient(Socket& client)
 {
-    char buffer[BUFFER_SIZE];
-    std::memset(buffer, 0, BUFFER_SIZE); 
-    ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);  
-    
-    if (bytesRead <= 0)
-    {
-        closeSocket(this->_clientSockets, client.fd);
-        return;
-    }
-    client.lastActivity = std::time(NULL);
-    if (client.buffer.size() + bytesRead > 1048576) 
-    {
-        std::cerr << "Server Error: Request too large from " << client.host << std::endl;
-        closeSocket(this->_clientSockets, client.fd);
-        return;
-    }  
-    client.buffer.append(buffer, bytesRead);
-    if (requestIsComplete(client.buffer))
-    {
-        std::cout << "\n========== Received Request ==========\n\n";
-        std::cout << client.buffer;
-        std::cout << "======================================\n";
-        
-        Socket *ls = findSocket(this->_listenSockets, client.listenFd);
-        std::string localIp;
-        int localPort = 0;
-        if (ls)
-        {
-            localIp = ls->host;
-            localPort = ls->port;
-        }
-        HttpRequest request(_config, client.buffer, localIp, localPort);
-        std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
-        std::cout << "Status: " << request.getStatus() << std::endl;
-        std::cout << "Method: " << request.getMethod() << std::endl;
-        std::cout << "URI: " << request.getUri() << std::endl;
-        std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-        std::cout << "Redirect Code: " << request.getRedirectCode() << std::endl;
-        std::cout << "Redirect URI: " << request.getRedirectUri() << std::endl;
-        std::cout << "Final Path: " << request.getFinalPath() << std::endl;
-        std::cout << "Headers:" << std::endl;
-        for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
-            std::cout << "  " << it->first << ": " << it->second << std::endl;
-        }
-        std::cout << "Body: [" << request.getBody() << "]\n";
-        std::cout << "\n============================\n" << std::endl;
-        changePollEvent(client.fd, POLLOUT);
-    }
+	int localPort = 0;
+	char buffer[BUFFER_SIZE];
+	std::memset(buffer, 0, BUFFER_SIZE); 
+	ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);  
+	
+	if (bytesRead <= 0)
+	{
+		closeSocket(this->_clientSockets, client.fd);
+		return;
+	}
+	client.lastActivity = std::time(NULL);
+	if (client.buffer.size() + bytesRead > 1048576) 
+	{
+		std::cerr << "Server Error: Request too large from " << client.host << std::endl;
+		closeSocket(this->_clientSockets, client.fd);
+		return;
+	}  
+	client.buffer.append(buffer, bytesRead);
+	if (requestIsComplete(client.buffer))
+	{
+		std::cout << "\n========== Received Request ==========\n\n";
+		std::cout << client.buffer;
+		std::cout << "======================================\n";
+		
+		Socket *ls = findSocket(this->_listenSockets, client.listenFd);
+		std::string localIp;
+		if (ls)
+		{
+			localIp = ls->host;
+			localPort = ls->port;
+		}
+		HttpRequest request(_config, client.buffer, localIp, localPort);
+		std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
+		std::cout << "Status: " << request.getStatus() << std::endl;
+		std::cout << "Method: " << request.getMethod() << std::endl;
+		std::cout << "URI: " << request.getUri() << std::endl;
+		std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
+		std::cout << "Redirect Code: " << request.getRedirectCode() << std::endl;
+		std::cout << "Redirect URI: " << request.getRedirectUri() << std::endl;
+		std::cout << "Final Path: " << request.getFinalPath() << std::endl;
+		std::cout << "Headers:" << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
+			std::cout << "  " << it->first << ": " << it->second << std::endl;
+		}
+		std::cout << "Body: [" << request.getBody() << "]\n";
+		std::cout << "\n============================\n" << std::endl;
+		changePollEvent(client.fd, POLLOUT);
+	}
 }
 
 void Server::writeToClient(Socket& client)
@@ -387,39 +382,39 @@ void Server::writeToClient(Socket& client)
 
 void Server::handleClientSocket(size_t& index)
 {
-	int fd = pollFds[index].fd;
-	Socket *client = findSocket(clientSockets, fd);
+	int fd = this->_pollFds[index].fd;
+	Socket *client = findSocket(this->_clientSockets, fd);
 	
 	if (!client)
 	{
-		pollFds.erase(pollFds.begin() + index);
+		this->_pollFds.erase(this->_pollFds.begin() + index);
 		index--;
 		return;
 	}
-	if (pollFds[index].revents & (POLLERR | POLLHUP))
+	if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
 	{
 		handleSocketError(fd, index, false);
 		return;
 	}
-	if (pollFds[index].revents & POLLIN)
+	if (this->_pollFds[index].revents & POLLIN)
 	{
 		readFromClient(*client);
-		client = findSocket(clientSockets, fd);
+		client = findSocket(this->_clientSockets, fd);
 		if (!client)
 			return;
 	}
-	if (pollFds[index].revents & POLLOUT)
+	if (this->_pollFds[index].revents & POLLOUT)
 		writeToClient(*client);
 }
 
 void Server::checkClientTimeouts()
 {
 	time_t now = time(NULL);
-	for (size_t i = 0; i < clientSockets.size(); i++)
+	for (size_t i = 0; i < this->_clientSockets.size(); i++)
 	{
-		if (now - clientSockets[i].lastActivity > CLIENT_TIMEOUT)
+		if (now - this->_clientSockets[i].lastActivity > CLIENT_TIMEOUT)
 		{
-			closeSocket(clientSockets, clientSockets[i].fd);
+			closeSocket(this->_clientSockets, this->_clientSockets[i].fd);
 			i--; 
 		}
 	}
@@ -430,13 +425,13 @@ void Server::run()
 	initPollFds();
 	while (true)
 	{
-		if (pollFds.empty())
+		if (this->_pollFds.empty())
 			throw std::runtime_error("Server Error: No sockets to poll");
-		int ret = poll(&pollFds[0], pollFds.size(), POLL_TIMEOUT);
+		int ret = poll(&this->_pollFds[0], this->_pollFds.size(), POLL_TIMEOUT);
 		if (ret == -1)
 		{
-			closeAllSockets(clientSockets);
-			closeAllSockets(listenSockets);
+			closeAllSockets(this->_clientSockets);
+			closeAllSockets(this->_listenSockets);
 			throw std::runtime_error("Server Error: poll failed");
 		}
 		if (ret == 0)
@@ -446,12 +441,6 @@ void Server::run()
 		}
 		for (size_t i = 0; i < this->_pollFds.size(); i++)
 		{
-      std::cout << __FILE__
-								<< ", "
-								<< __LINE__
-			 					<< ": Scoket listening"
-								<< std::endl;
-
 			if (this->_pollFds[i].revents == 0)
 				continue;
 			if (findSocket(this->_listenSockets, this->_pollFds[i].fd) != NULL)

@@ -7,17 +7,17 @@ void socketInfo(Socket *socket)
 {
 	std::cout << "fd: "
 						<< socket->fd
-						<< " host: "
+						<< "\nhost: "
 						<< socket->host
-						<< " port: "
+						<< "\nport: "
 						<< socket->port
-						<< " listenFd: "
+						<< "\nlistenFd: "
 						<< socket->listenFd
-						<< " buffer: "
+						<< "\nbuffer: "
 						<< socket->buffer
-						<< " lastActivity: "
+						<< "\nlastActivity: "
 						<< socket->lastActivity
-						<< " totalSent: "
+						<< "\ntotalSent: "
 						<< socket->totalSent
 						<< std::endl;
 }
