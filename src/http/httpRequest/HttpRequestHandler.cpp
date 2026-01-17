@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/14 18:50:17 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 12:52:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,7 +80,7 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
     for (size_t i = 0; i < location->ctx.index.size(); i++)
     {
-        std::string indexPath = joinPath(dirPath, location->ctx.index[i]);
+        std::string indexPath = joinPath(dirPath, location->ctx.index[i]); //lhawther used root var
         if (fileExists(indexPath))
         {
             if (!hasAccess(indexPath, R_OK))
@@ -143,8 +143,8 @@ RequestStatus HttpRequestHandler::handleDelete(const std::string& path)
 {
     if (dirExists(path))
         return deleteDir(path);
-    if (!hasAccess(path, W_OK))
-        return REQ_FORBIDDEN;
+    // if (!hasAccess(path, W_OK))
+    //     return REQ_FORBIDDEN;
     if (remove(path.c_str()) != 0)
         return REQ_INTERNAL_SERVER_ERROR;
     return REQ_NO_CONTENT;

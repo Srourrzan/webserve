@@ -6,18 +6,18 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/14 19:45:34 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 13:01:10 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "utils.hpp"
 #include "Server.hpp"
 #include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 
 Server::Server(const HttpConfig& config) : _config(config)
 {
-    this->_listenSockets.clear();
-    this->_clientSockets.clear();
+    listenSockets.clear();
+    clientSockets.clear();
     fillListenSockets(_config);
     initListenSockets();
     
@@ -29,8 +29,8 @@ Server::Server(const HttpConfig& config) : _config(config)
 
 Server::~Server()
 {
-    closeAllSockets(this->_clientSockets);
-    closeAllSockets(this->_listenSockets);
+    closeAllSockets(clientSockets);
+    closeAllSockets(listenSockets);
 }
 
 void Server::closeAllSockets(std::vector<Socket>& sockets)
@@ -142,27 +142,27 @@ bool Server::setupSocket(Socket& ls, struct addrinfo* addr)
 
 void Server::initListenSockets()
 {
-	std::vector<Socket> successfulSockets;
-	for (size_t i = 0; i < this->_listenSockets.size(); i++)
-	{
-		Socket& ls = this->_listenSockets[i];
-		struct addrinfo* res = getAddressInfo(ls);
-		if (!res)
-			continue;
-		for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
-		{
-			Socket newSocket = ls;
-			if (setupSocket(newSocket, p))
-			{
-				successfulSockets.push_back(newSocket);
-				break;
-			}
-		}
-		freeaddrinfo(res);
-	} 
-	if (successfulSockets.empty())
-		throw std::runtime_error("No valid listening sockets could be created.");
-	this->_listenSockets = successfulSockets;
+    std::vector<Socket> successfulSockets;
+    for (size_t i = 0; i < listenSockets.size(); i++)
+    {
+        Socket& ls = listenSockets[i];
+        struct addrinfo* res = getAddressInfo(ls);
+        if (!res)
+            continue;
+        for (struct addrinfo* p = res; p != NULL; p = p->ai_next)
+        {
+            Socket newSocket = ls;
+            if (setupSocket(newSocket, p))
+            {
+                successfulSockets.push_back(newSocket);
+                break;
+            }
+        }
+        freeaddrinfo(res);
+    } 
+    if (successfulSockets.empty())
+        throw std::runtime_error("No valid listening sockets could be created.");
+    listenSockets = successfulSockets;
 }
 
 void Server::setNonBlocking(int fd)
@@ -180,7 +180,7 @@ void Server::addToPoll(int fd, short events)
     pfd.fd = fd;
     pfd.events = events;
     pfd.revents = 0;
-    this->_pollFds.push_back(pfd);
+    pollFds.push_back(pfd);
 }
 
 void Server::initPollFds()
@@ -348,13 +348,13 @@ void Server::readFromClient(Socket& client)
 void Server::writeToClient(Socket& client)
 {
     std::cout << "Writing response to client fd: " << client.fd << std::endl;
-    
-    std::string response = 
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html\r\n"
-        "Content-Length: 50\r\n"
-        "\r\n"
-        "<html><body><h1>Hello from webserv!</h1></body></html>";
+    std::string& response = client.responseString;
+    // std::string response = 
+    //     "HTTP/1.1 200 OK\r\n"
+    //     "Content-Type: text/html\r\n"
+    //     "Content-Length: 50\r\n"
+    //     "\r\n"
+    //     "<html><body><h1>Hello from webserv!</h1></body></html>";
     
     std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
     std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
@@ -387,39 +387,39 @@ void Server::writeToClient(Socket& client)
 
 void Server::handleClientSocket(size_t& index)
 {
-	int fd = this->_pollFds[index].fd;
-	Socket *client = findSocket(this->_clientSockets, fd);
+	int fd = pollFds[index].fd;
+	Socket *client = findSocket(clientSockets, fd);
 	
 	if (!client)
 	{
-		this->_pollFds.erase(this->_pollFds.begin() + index);
+		pollFds.erase(pollFds.begin() + index);
 		index--;
 		return;
 	}
-	if (this->_pollFds[index].revents & (POLLERR | POLLHUP))
+	if (pollFds[index].revents & (POLLERR | POLLHUP))
 	{
 		handleSocketError(fd, index, false);
 		return;
 	}
-	if (this->_pollFds[index].revents & POLLIN)
+	if (pollFds[index].revents & POLLIN)
 	{
 		readFromClient(*client);
-		client = findSocket(this->_clientSockets, fd);
+		client = findSocket(clientSockets, fd);
 		if (!client)
 			return;
 	}
-	if (this->_pollFds[index].revents & POLLOUT)
+	if (pollFds[index].revents & POLLOUT)
 		writeToClient(*client);
 }
 
 void Server::checkClientTimeouts()
 {
 	time_t now = time(NULL);
-	for (size_t i = 0; i < this->_clientSockets.size(); i++)
+	for (size_t i = 0; i < clientSockets.size(); i++)
 	{
-		if (now - this->_clientSockets[i].lastActivity > CLIENT_TIMEOUT)
+		if (now - clientSockets[i].lastActivity > CLIENT_TIMEOUT)
 		{
-			closeSocket(this->_clientSockets, this->_clientSockets[i].fd);
+			closeSocket(clientSockets, clientSockets[i].fd);
 			i--; 
 		}
 	}
@@ -430,13 +430,13 @@ void Server::run()
 	initPollFds();
 	while (true)
 	{
-		if (this->_pollFds.empty())
+		if (pollFds.empty())
 			throw std::runtime_error("Server Error: No sockets to poll");
-		int ret = poll(&this->_pollFds[0], this->_pollFds.size(), POLL_TIMEOUT);
+		int ret = poll(&pollFds[0], pollFds.size(), POLL_TIMEOUT);
 		if (ret == -1)
 		{
-			closeAllSockets(this->_clientSockets);
-			closeAllSockets(this->_listenSockets);
+			closeAllSockets(clientSockets);
+			closeAllSockets(listenSockets);
 			throw std::runtime_error("Server Error: poll failed");
 		}
 		if (ret == 0)

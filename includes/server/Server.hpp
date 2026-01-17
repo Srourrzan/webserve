@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/14 19:33:12 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 12:49:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ struct Socket
     std::string buffer;
     std::time_t lastActivity;
     size_t totalSent;
+	std::string responseString;
 };
 
 class Server
