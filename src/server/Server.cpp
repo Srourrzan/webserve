@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 15:04:10 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 15:46:02 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -323,18 +323,7 @@ void Server::readFromClient(Socket& client)
 		}
 		HttpRequest request(_config, client.buffer, localIp, localPort);
 		std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
-		std::cout << "Status: " << request.getStatus() << std::endl;
-		std::cout << "Method: " << request.getMethod() << std::endl;
-		std::cout << "URI: " << request.getUri() << std::endl;
-		std::cout << "HTTP Version: " << request.getHttpVersion() << std::endl;
-		std::cout << "Redirect Code: " << request.getRedirectCode() << std::endl;
-		std::cout << "Redirect URI: " << request.getRedirectUri() << std::endl;
-		std::cout << "Final Path: " << request.getFinalPath() << std::endl;
-		std::cout << "Headers:" << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = request.getHeaders().begin(); it != request.getHeaders().end(); ++it) {
-			std::cout << "  " << it->first << ": " << it->second << std::endl;
-		}
-		std::cout << "Body: [" << request.getBody() << "]\n";
+		std::cout << request;
 		std::cout << "\n============================\n" << std::endl;
 		changePollEvent(client.fd, POLLOUT);
 	}
@@ -354,8 +343,7 @@ void Server::writeToClient(Socket& client)
     std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
     std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
 
-    ssize_t sent = send(client.fd, response.c_str() + client.totalSent, 
-                       response.size() - client.totalSent, 0);
+    ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
     
     std::cout << "send() returned: " << sent << std::endl;
     
