@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 16:20:53 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 12:49:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,9 +55,9 @@ public:
 	std::vector<Socket> getListenSockets() const;
 		
 private:
-	std::vector<struct pollfd> pollFds;
-	std::vector<Socket> listenSockets;
-	std::vector<Socket> clientSockets;
+	std::vector<struct pollfd> _pollFds;
+	std::vector<Socket> _listenSockets;
+	std::vector<Socket> _clientSockets;
 	HttpConfig _config;
 	
 	void closeSocket(std::vector<Socket>& sockets, int fd);

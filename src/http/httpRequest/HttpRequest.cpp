@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/08 21:52:02 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/17 15:35:11 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,84 +32,84 @@ HttpRequest::HttpRequest(
 }
 
 HttpRequest::HttpRequest(const HttpRequest& other)
-    : httpConfig(other.httpConfig), 
-      server(other.server),
-      location(other.location),
-      _localIp(other._localIp),
-      _localPort(other._localPort),
-      request(other.request),
-      method(other.method),
-      uri(other.uri),
-      httpVersion(other.httpVersion),
-      headers(other.headers),
-      body(other.body),
-      status(other.status),
-      finalPath(other.finalPath),
-      redirectUri(other.redirectUri),
-      redirectCode(other.redirectCode)
+	: httpConfig(other.httpConfig), 
+		server(other.server),
+		location(other.location),
+		_localIp(other._localIp),
+		_localPort(other._localPort),
+		request(other.request),
+		method(other.method),
+		uri(other.uri),
+		httpVersion(other.httpVersion),
+		headers(other.headers),
+		body(other.body),
+		status(other.status),
+		finalPath(other.finalPath),
+		redirectUri(other.redirectUri),
+		redirectCode(other.redirectCode)
 {}
 
 void HttpRequest::processRawRequest()
 {
-    parseRequest();
-    if (status != REQ_OK)
-        return;
+	parseRequest();
+	if (status != REQ_OK)
+		return;
 
-    validateRequest();
-    if (status != REQ_OK)
-        return;
+	validateRequest();
+	if (status != REQ_OK)
+		return;
 
-    handleRequest();
-    return;
+	handleRequest();
+	return;
 }
 
 void HttpRequest::parseRequest()
 {
-    HttpRequestParser parser(request);
-    status = parser.parse();
-    method = parser.getMethod();
-    uri = parser.getUri();
-    httpVersion = parser.getHttpVersion();
-    headers = parser.getHeaders();
-    body = parser.getBody();
-    if (status != REQ_OK)
-        handleErrorPageIfNeeded();
+	HttpRequestParser parser(request);
+	status = parser.parse();
+	method = parser.getMethod();
+	uri = parser.getUri();
+	httpVersion = parser.getHttpVersion();
+	headers = parser.getHeaders();
+	body = parser.getBody();
+	if (status != REQ_OK)
+		handleErrorPageIfNeeded();
 }
 
 void HttpRequest::validateRequest()
 {
-    HttpRequestValidator validator(*this);
-    status = validator.validate();
-    server = validator.getServer();
-    location = validator.getLocation();
-    body = validator.getBody();
-    if (status >= 300 && status < 400)
-    {
-        redirectCode = validator.getRedirectCode();
-        redirectUri = validator.getRedirectUri();
-    }
-    if (status != REQ_OK)
-        handleErrorPageIfNeeded();
+	HttpRequestValidator validator(*this);
+	status = validator.validate();
+	server = validator.getServer();
+	location = validator.getLocation();
+	body = validator.getBody();
+	if (status >= 300 && status < 400)
+	{
+		redirectCode = validator.getRedirectCode();
+		redirectUri = validator.getRedirectUri();
+	}
+	if (status != REQ_OK)
+		handleErrorPageIfNeeded();
 }
 
 void HttpRequest::handleRequest()
 {
-    HttpRequestHandler handler(*this);
-    status = handler.handleRequest();
-    finalPath = handler.getFinalPath();
-    if (status != REQ_OK)
-        handleErrorPageIfNeeded();
+	HttpRequestHandler handler(*this);
+	status = handler.handleRequest();
+	finalPath = handler.getFinalPath();
+	if (status != REQ_OK)
+		handleErrorPageIfNeeded();
 }
 
 void HttpRequest::handleErrorPageIfNeeded()
 {
-    HttpRequestHandler handler(*this);
+	HttpRequestHandler handler(*this);
 
-    if (status >= 400)
-    {
-        handler.setErrorPagePath();
-        finalPath = handler.getFinalPath();
-    }
+	if (status >= 400)
+	{
+		handler.setErrorPagePath();
+		finalPath = handler.getFinalPath();
+	}
 }
 
 const std::string& HttpRequest::getMethod() const
@@ -180,4 +180,28 @@ const std::string HttpRequest::getLocalIp() const
 int HttpRequest::getLocalPort() const
 {
     return _localPort;
+}
+
+std::ostream & operator<< (std::ostream & out, const HttpRequest & data)
+{
+	out << "HttpRequest Info: "
+			<< "\nStatus: "
+			<< data.getStatus()
+			<< "\nMethod: " 
+			<< data.getMethod()
+			<< "\nURI: " 
+			<< data.getUri()
+			<< "\nHTTP Version: " 
+			<< data.getHttpVersion()
+			<< "\nRedirect Code: " 
+			<< data.getRedirectCode()
+			<< "\nRedirect URI: " 
+			<< data.getRedirectUri()
+			<< "\nFinal Path: " 
+			<< data.getFinalPath()
+			<< "\nHeaders: ";
+	for (std::map<std::string, std::string>::const_iterator it = data.getHeaders().begin(); it != data.getHeaders().end(); ++it) 
+		out << "  " << it->first << ": " << it->second << "\n";
+	out << "Body: [" << data.getBody() << "]\n";
+	return (out);
 }

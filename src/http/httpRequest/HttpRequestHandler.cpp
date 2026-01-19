@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 19:00:13 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 12:52:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,7 +80,7 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
     for (size_t i = 0; i < location->ctx.index.size(); i++)
     {
-        std::string indexPath = joinPath(root, location->ctx.index[i]);
+        std::string indexPath = joinPath(root, location->ctx.index[i]); //lhawther used root var
         if (fileExists(indexPath))
         {
             if (!hasAccess(indexPath, R_OK))
@@ -106,7 +106,7 @@ RequestStatus HttpRequestHandler::handleGet()
     if (!hasAccess(path, R_OK))
         return REQ_FORBIDDEN;
     finalPath = path;
-
+    std::cout << *this;
     return REQ_OK;
 }
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/28 23:31:33 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/08 21:20:19 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/17 15:22:20 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,3 +64,4 @@ class HttpRequest
 
 };
 
+std::ostream& operator<< (std::ostream &out, const HttpRequest& data);

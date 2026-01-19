@@ -111,7 +111,6 @@ std::string HttpResponse::buildTree(const std::string& path, const std::string& 
     std::string html = "<ul>";
     DIR* dir = opendir(path.c_str());
     if (!dir) return "";
-        std::cout<<"khiiiiiiiiiiiiii"<<std::endl; 
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
@@ -123,7 +122,6 @@ std::string HttpResponse::buildTree(const std::string& path, const std::string& 
         
         std::string fullPath = path + pathSep + name;
         std::string fullUri = uri + uriSep + name;
-        std::cout<<"hiiiiiiiiiiiiii"<<std::endl; 
         struct stat st;
         if (stat(fullPath.c_str(), &st) == 0) {
             if (S_ISDIR(st.st_mode)) {
@@ -145,8 +143,6 @@ std::string HttpResponse::generateAutoIndex(const std::string& path, const std::
     std::string content = "<html><head><title>Index of " + uri + "</title></head><body>";
     
     content += "<h1> Index of " + uri + "</h1><hr>";
-            std::cout<<"iiiiiiiiiiiiii"<<std::endl; 
-
     content += buildTree(path, uri);
     content += "<hr></body></html>";
     return content;
@@ -160,12 +156,9 @@ void HttpResponse::buildResponse(HttpRequest& req)
     std::string ConnectionValue;
     
     const LocationConfig* loc = req.getLocation();
-        std::cout<<"build"<<std::endl; 
 
     if(req.getRedirectCode() !=0 )
     {
-        std::cout<<"redirection"<<std::endl; 
-
         this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
         this->fullResponse += "Location: " + req.getRedirectUri()+ "\r\n"; 
         this->fullResponse += "Content-Length: 0\r\n";
@@ -175,21 +168,14 @@ void HttpResponse::buildResponse(HttpRequest& req)
     
     else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
     {
-                            std::cout<<"entered"<<std::endl; 
 
         if (loc != NULL && loc->ctx.autoIndex == 1)
         {
-                    std::cout<<"ooiiiiiiiiiii"<<std::endl; 
-
             this->body = generateAutoIndex(this->path, req.getUri());
         }
     }
-    else
+    else 
     {
-            std::cout <<this->path<<std::endl;
-
-                            std::cout<<"else"<<std::endl; 
-
         this->body = fileToString(path);
         if (this->body.empty() && this->codeStatus >= 400) {
             this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
