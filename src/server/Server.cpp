@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 15:46:02 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/17 16:31:30 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -333,20 +333,10 @@ void Server::writeToClient(Socket& client)
 {
     std::cout << "Writing response to client fd: " << client.fd << std::endl;
     std::string& response = client.responseString;
-    // std::string response = 
-    //     "HTTP/1.1 200 OK\r\n"
-    //     "Content-Type: text/html\r\n"
-    //     "Content-Length: 50\r\n"
-    //     "\r\n"
-    //     "<html><body><h1>Hello from webserv!</h1></body></html>";
-    
     std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
     std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
-
     ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
-    
     std::cout << "send() returned: " << sent << std::endl;
-    
     if (sent <= 0)
     {
         std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
