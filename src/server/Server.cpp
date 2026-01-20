@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/20 18:46:19 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/20 19:55:05 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -328,6 +328,7 @@ void Server::readFromClient(Socket& client)
 		
         HttpResponse response;
 		response.buildResponse(request);
+        std::cout << response;
 		client.responseString = response.getFullResponse();
         changePollEvent(client.fd, POLLOUT);
 	}

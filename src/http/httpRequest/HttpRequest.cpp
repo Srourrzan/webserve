@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 15:35:11 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/20 20:19:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,6 +193,8 @@ std::ostream & operator<< (std::ostream & out, const HttpRequest & data)
 			<< data.getUri()
 			<< "\nHTTP Version: " 
 			<< data.getHttpVersion()
+			<< "\nlocation\n"
+			<< data.getLocation()
 			<< "\nRedirect Code: " 
 			<< data.getRedirectCode()
 			<< "\nRedirect URI: " 

@@ -150,60 +150,105 @@ std::string HttpResponse::generateAutoIndex(const std::string& path, const std::
 
 void HttpResponse::buildResponse(HttpRequest& req)
 {
-    this->codeStatus = req.getStatus();
-    this->path = req.getFinalPath();
-    std::string physicalPath = req.getFinalPath();
-    std::string ConnectionValue;
-    
-    const LocationConfig* loc = req.getLocation();
+	this->codeStatus = req.getStatus();
+	this->path = req.getFinalPath();
+	std::string physicalPath = req.getFinalPath();
+	std::string ConnectionValue;
+	std::cout << __func__  << ": " << __LINE__
+						<< " physical path: "
+						<< physicalPath
+						<< std::endl;
+	const LocationConfig* loc = req.getLocation();
+	std::cout << __func__  << ": " << __LINE__
+						<< " Location: " 
+						<< req.getLocation() 
+						<< std::endl;
+	std::cout << __func__  << ": " << __LINE__
+						<< " redirect code: " 
+						<< req.getRedirectCode() 
+						<< std::endl;
+	if(req.getRedirectCode() !=0 )
+	{
+		this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
+		this->fullResponse += "Location: " + req.getRedirectUri()+ "\r\n"; 
+		this->fullResponse += "Content-Length: 0\r\n";
+		this->fullResponse += "Connection: close\r\n\r\n";
+		return;
+	}
+	
+	else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
+	{
+		if (loc != NULL && loc->ctx.autoIndex == 1)
+		{
+				this->body = generateAutoIndex(this->path, req.getUri());
+		}
+	}
+	else 
+	{
+		this->body = fileToString(path);
+		if (this->body.empty() && this->codeStatus >= 400) {
+				this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
+		}
+	}
 
-    if(req.getRedirectCode() !=0 )
-    {
-        this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
-        this->fullResponse += "Location: " + req.getRedirectUri()+ "\r\n"; 
-        this->fullResponse += "Content-Length: 0\r\n";
-        this->fullResponse += "Connection: close\r\n\r\n";
-        return;
-    }
-    
-    else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
-    {
 
-        if (loc != NULL && loc->ctx.autoIndex == 1)
-        {
-            this->body = generateAutoIndex(this->path, req.getUri());
-        }
-    }
-    else 
-    {
-        this->body = fileToString(path);
-        if (this->body.empty() && this->codeStatus >= 400) {
-            this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
-        }
-    }
+	this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(codeStatus) + "\r\n";
+	if (this->codeStatus >= 400 || dirExists(this->path))
+			this->fullResponse += "Content-Type: text/html\r\n";
+	else
+			this->fullResponse += "Content-Type: " + getContentType(this->path) + "\r\n";
+	
+	// this->fullResponse += "Content-Type: " + getContentType(path) + "\r\n";
+	this->fullResponse += "Content-Length: " + intToString(this->body.size()) + "\r\n"; 
+	this->fullResponse += "Server: Webserv/1.0\r\n"; //ask
+	const std::map<std::string,std::string>&h = req.getHeaders();
+	std::map<std::string,std::string>::const_iterator it = h.find("Connection");
+	
+	if(it != h.end())
+	{
+			ConnectionValue = it->second;
+	}
+	else
+			ConnectionValue = "keep-alive";
+	this->fullResponse += "Connection: " + ConnectionValue + " \r\n";   
+	this->fullResponse += "\r\n";
+	this->fullResponse += this->body;
+	std::cout<<fullResponse <<std::endl;
 
+}
 
-    this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(codeStatus) + "\r\n";
-    if (this->codeStatus >= 400 || dirExists(this->path))
-        this->fullResponse += "Content-Type: text/html\r\n";
-    else
-        this->fullResponse += "Content-Type: " + getContentType(this->path) + "\r\n";
-    
-    // this->fullResponse += "Content-Type: " + getContentType(path) + "\r\n";
-    this->fullResponse += "Content-Length: " + intToString(this->body.size()) + "\r\n"; 
-    this->fullResponse += "Server: Webserv/1.0\r\n"; //ask
-    const std::map<std::string,std::string>&h = req.getHeaders();
-    std::map<std::string,std::string>::const_iterator it = h.find("Connection");
-    
-    if(it != h.end())
-    {
-        ConnectionValue = it->second;
-    }
-    else
-        ConnectionValue = "keep-alive";
-    this->fullResponse += "Connection: " + ConnectionValue + " \r\n";   
-    this->fullResponse += "\r\n";
-    this->fullResponse += this->body;
-    std::cout<<fullResponse <<std::endl;
+std::string HttpResponse::getPath() const
+{
+	return (this->path);
+}
 
+std::string HttpResponse::getHeader() const
+{
+	return (this->header);
+}
+
+std::string HttpResponse::getBody() const
+{
+	return (this->body);
+}
+
+int HttpResponse::getCodeStatus() const
+{
+	return (this->codeStatus);
+}
+
+std::ostream& operator<< (std::ostream &out, const HttpResponse& data)
+{
+  out << "Http Respnse info:\n"
+			<< "full reponse:\n"
+			<< data.getFullResponse()
+			<< "\npath:\n"
+			<< data.getPath()
+			<< "\nheader\n"
+			<< data.getHeader()
+			<< "\nbody\n"
+			<< data.getBody()
+			<< "\ncodeStatus\n"
+			<< data.getCodeStatus();
+	return (out);
 }
