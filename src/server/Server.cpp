@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 16:31:30 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/20 18:46:19 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -325,7 +325,11 @@ void Server::readFromClient(Socket& client)
 		std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
 		std::cout << request;
 		std::cout << "\n============================\n" << std::endl;
-		changePollEvent(client.fd, POLLOUT);
+		
+        HttpResponse response;
+		response.buildResponse(request);
+		client.responseString = response.getFullResponse();
+        changePollEvent(client.fd, POLLOUT);
 	}
 }
 
@@ -335,7 +339,9 @@ void Server::writeToClient(Socket& client)
     std::string& response = client.responseString;
     std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
     std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
+
     ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
+    
     std::cout << "send() returned: " << sent << std::endl;
     if (sent <= 0)
     {
