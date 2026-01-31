@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigValidator.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 23:47:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/28 18:57:16 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/31 15:20:22 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,50 +118,50 @@ bool ConfigValidator::isValidPort(const std::string& port)
 
 bool ConfigValidator::isValidHostname(const std::string& hostname)
 {
-    size_t start = 0;
-    size_t pos;
-    if (hostname.empty() || hostname.length() > 253)
-        return false;
-    if (hostname == "localhost")
-        return true;    
-    if (hostname[0] == '.' || hostname[hostname.length() - 1] == '.')
-        return false;
-    while (true)
-    {
-        pos = hostname.find('.', start);
-        size_t end = (pos == std::string::npos) ? hostname.length() : pos;
-        std::string label = hostname.substr(start, end - start);
-        if (label.empty() || label.length() > 63)
-            return false;
-        if (label[0] == '-' || label[label.length() - 1] == '-')
-            return false;        
-        for (size_t j = 0; j < label.length(); j++)
-        {
-            char c = label[j];
-            if (!std::isalnum(c) && c != '-')
-                return false;
-        }        
-        if (pos == std::string::npos)
-            break;
-        start = pos + 1;
-    }
-    return true;
+	size_t start = 0;
+	size_t pos;
+	if (hostname.empty() || hostname.length() > 253)
+		return false;
+	if (hostname == "localhost")
+		return true;
+	if (hostname[0] == '.' || hostname[hostname.length() - 1] == '.')
+		return false;
+	while (true)
+	{
+		pos = hostname.find('.', start);
+		size_t end = (pos == std::string::npos) ? hostname.length() : pos;
+		std::string label = hostname.substr(start, end - start);
+		if (label.empty() || label.length() > 63)
+			return false;
+		if (label[0] == '-' || label[label.length() - 1] == '-')
+			return false;
+		for (size_t j = 0; j < label.length(); j++)
+		{
+			char c = label[j];
+			if (!std::isalnum(c) && c != '-')
+				return false;
+		}
+		if (pos == std::string::npos)
+			break;
+		start = pos + 1;
+	}
+	return true;
 }
 
 bool ConfigValidator::isValidString(const std::string& value, const std::string& allowedChars)
 {
-    if (value.empty())
-        return false;
-    for (size_t i = 0; i < value.length(); i++)
-    {
-        char c = value[i];        
-        if (std::isalnum(static_cast<unsigned char>(c)))
-            continue;
-        if (allowedChars.find(c) != std::string::npos)
-            continue;
-        return false;
-    }
-    return true;
+	if (value.empty())
+		return false;
+	for (size_t i = 0; i < value.length(); i++)
+	{
+		char c = value[i];
+		if (std::isalnum(static_cast<unsigned char>(c)))
+			continue;
+		if (allowedChars.find(c) != std::string::npos)
+			continue;
+		return false;
+	}
+	return true;
 }
 
 void ConfigValidator::validateMethod(const std::string& method)
@@ -174,17 +174,17 @@ void ConfigValidator::validateMethod(const std::string& method)
         
 void ConfigValidator::validateLocation(const LocationConfig& loc)
 {
-    if (loc.path.empty())
-        throw std::runtime_error("Location must have a path");
-    if (loc.redirectCode != 0)
-        return;
-    validateContext(loc.ctx);
-    for (size_t i = 0; i < loc.allowedMethods.size(); i++)
-        validateMethod(loc.allowedMethods[i]);
-    if (loc.uploadEnabled && !isValidString(loc.uploadPath, "_-./"))
-        throw std::runtime_error("Invalid upload_path: " + loc.uploadPath);    
-    if (loc.cgiEnabled && loc.cgiExtensions.empty())
-        throw std::runtime_error("Location with cgi enabled must have cgi_ext");
+	if (loc.path.empty())
+		throw std::runtime_error("Location must have a path");
+	if (loc.redirectCode != 0)
+		return;
+	validateContext(loc.ctx);
+	for (size_t i = 0; i < loc.allowedMethods.size(); i++)
+		validateMethod(loc.allowedMethods[i]);
+	if (loc.uploadEnabled && !isValidString(loc.uploadPath, "_-./"))
+		throw std::runtime_error("Invalid upload_path: " + loc.uploadPath);    
+	if (loc.cgiEnabled && loc.cgiExtensions.empty())
+		throw std::runtime_error("Location with cgi enabled must have cgi_ext");
 }
 
 void ConfigValidator::validateServer(const ServerConfig& srv)

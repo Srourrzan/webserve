@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/20 19:55:05 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/31 20:10:03 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -251,14 +251,14 @@ bool Server::requestIsComplete(const std::string& buffer)
 
 void Server::changePollEvent(int fd, short events)
 {
-    for (size_t i = 0; i < this->_pollFds.size(); i++)
-    {
-        if (this->_pollFds[i].fd == fd)
-        {
-            this->_pollFds[i].events = events;
-            return;
-        }
-    }
+	for (size_t i = 0; i < this->_pollFds.size(); i++)
+	{
+		if (this->_pollFds[i].fd == fd)
+		{
+			this->_pollFds[i].events = events;
+			return;
+		}
+	}
 }
 
 void Server::handleSocketError(int fd, size_t& index, bool isListen)
@@ -290,6 +290,8 @@ void Server::handleListenSocket(size_t& index)
 
 void Server::readFromClient(Socket& client)
 {
+  HttpResponse response;
+	std::string localIp;
 	int localPort = 0;
 	char buffer[BUFFER_SIZE];
 	std::memset(buffer, 0, BUFFER_SIZE); 
@@ -310,12 +312,10 @@ void Server::readFromClient(Socket& client)
 	client.buffer.append(buffer, bytesRead);
 	if (requestIsComplete(client.buffer))
 	{
-		std::cout << "\n========== Received Request ==========\n\n";
-		std::cout << client.buffer;
-		std::cout << "======================================\n";
-		
+		// std::cout << "\n========== Received Request ==========\n\n";
+		// std::cout << client.buffer;
+		// std::cout << "======================================\n";
 		Socket *ls = findSocket(this->_listenSockets, client.listenFd);
-		std::string localIp;
 		if (ls)
 		{
 			localIp = ls->host;
@@ -325,44 +325,39 @@ void Server::readFromClient(Socket& client)
 		std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
 		std::cout << request;
 		std::cout << "\n============================\n" << std::endl;
-		
-        HttpResponse response;
 		response.buildResponse(request);
-        std::cout << response;
+			std::cout << response;
 		client.responseString = response.getFullResponse();
-        changePollEvent(client.fd, POLLOUT);
+			changePollEvent(client.fd, POLLOUT);
 	}
 }
 
 void Server::writeToClient(Socket& client)
 {
-    std::cout << "Writing response to client fd: " << client.fd << std::endl;
-    std::string& response = client.responseString;
-    std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
-    std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
-
-    ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
-    
-    std::cout << "send() returned: " << sent << std::endl;
-    if (sent <= 0)
-    {
-        std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
-        closeSocket(this->_clientSockets, client.fd);
-        return;
-    }
-    std::cout << "Sent " << sent << " bytes to client" << std::endl;
-    
-    client.lastActivity = std::time(NULL);
-    client.totalSent += sent;
-    if (client.totalSent >= response.size())
-    {
-        std::cout << "Response complete, switching back to POLLIN" << std::endl;
-        client.totalSent = 0; 
-        client.buffer.clear();
-        changePollEvent(client.fd, POLLIN);
-        // if (request.getHeaders().count("Connection") && request.getHeaders().at("Connection") == "close")
-        //         closeSocket(clientSockets, client.fd);
-    }
+	// std::cout << "Writing response to client fd: " << client.fd << std::endl;
+	std::string& response = client.responseString;
+	// std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
+	// std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
+	ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
+	// std::cout << "send() returned: " << sent << std::endl;
+	if (sent <= 0)
+	{
+		std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
+		closeSocket(this->_clientSockets, client.fd);
+		return;
+	}
+	// std::cout << "Sent " << sent << " bytes to client" << std::endl;
+	client.lastActivity = std::time(NULL);
+	client.totalSent += sent;
+	if (client.totalSent >= response.size())
+	{
+		// std::cout << "Response complete, switching back to POLLIN" << std::endl;
+		client.totalSent = 0; 
+		client.buffer.clear();
+		changePollEvent(client.fd, POLLIN);
+		// if (request.getHeaders().count("Connection") && request.getHeaders().at("Connection") == "close")
+		//         closeSocket(clientSockets, client.fd);
+	}
 }
 
 void Server::handleClientSocket(size_t& index)

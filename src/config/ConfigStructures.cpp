@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 12:50:52 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/31 21:37:18 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -180,33 +180,46 @@ const ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader,
     return NULL;
 }
 
+// Fix this function to make it longest-prefix match instead of shortes-prefix match
 const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) const
 {
-    const LocationConfig *bestMatch = NULL;
-    const LocationConfig *defaultMatch = NULL;
-    size_t bestLength = 0;
+	const LocationConfig *bestMatch = NULL;
+	const LocationConfig *defaultMatch = NULL;
+	size_t bestLength = 0;
 
-    for (size_t i = 0; i < locations.size(); i++)
-    {
-        const LocationConfig& loc = locations[i];
-        const std::string& path = loc.path;
-        if (path == "/")
-            defaultMatch = &loc;
-        if (uri == path)
-            return &loc;
-        if (uri.compare(0, path.length(), path) == 0 && path.length() > bestLength)
-        {
-            if (uri.length() != path.length() && uri[path.length()] != '/')
-                continue;
-            bestLength = path.length();
-            bestMatch = &loc;
-        }
-    }
-    if (bestMatch)
-        return bestMatch;
-    if (defaultMatch)
-        return defaultMatch;
-    return NULL;
+	for (size_t i = 0; i < locations.size(); i++)
+	{
+		const LocationConfig& loc = locations[i];
+		const std::string& path = loc.path;
+		if (path == "/")
+				defaultMatch = &loc;
+		if (uri == path)
+				return &loc;
+		if (uri.compare(0, path.length(), path) == 0 && path.length() > bestLength)
+		{
+			if (uri.length() != path.length() && uri[path.length()] != '/')
+					continue;
+			bestLength = path.length();
+			bestMatch = &loc;
+		}
+	}
+	if (bestMatch)
+	{
+		LOG_INFO();
+		std::cout << "bestMatch.path: "
+							<< bestMatch->path
+							<< std::endl;
+		return bestMatch;
+	}
+	if (defaultMatch)
+	{
+		LOG_INFO();
+		std::cout << "defaultMatch.path: "
+							<< defaultMatch->path
+							<< std::endl;
+		return defaultMatch;
+	}
+	return NULL;
 }
 
 bool LocationConfig::operator()(ConfigParser* parser, const std::string& directive)

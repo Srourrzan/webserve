@@ -6,12 +6,12 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/17 12:49:25 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/31 12:44:18 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
-#define SERVER_HPP
+# define SERVER_HPP
 
 #include <ctime>
 #include <string>
@@ -33,6 +33,8 @@
 #define BUFFER_SIZE 4096
 #define POLL_TIMEOUT 1000
 #define CLIENT_TIMEOUT 300
+
+# define LOG_INFO() std::cout << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
 
 struct Socket
 {

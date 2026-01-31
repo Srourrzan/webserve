@@ -154,17 +154,17 @@ void HttpResponse::buildResponse(HttpRequest& req)
 	this->path = req.getFinalPath();
 	std::string physicalPath = req.getFinalPath();
 	std::string ConnectionValue;
-	std::cout << __func__  << ": " << __LINE__
-						<< " physical path: "
+	LOG_INFO();
+	std::cout << " physical path: "
 						<< physicalPath
 						<< std::endl;
 	const LocationConfig* loc = req.getLocation();
-	std::cout << __func__  << ": " << __LINE__
-						<< " Location: " 
+	LOG_INFO();
+	std::cout << " Location: " 
 						<< req.getLocation() 
 						<< std::endl;
-	std::cout << __func__  << ": " << __LINE__
-						<< " redirect code: " 
+	LOG_INFO();
+	std::cout << " redirect code: " 
 						<< req.getRedirectCode() 
 						<< std::endl;
 	if(req.getRedirectCode() !=0 )
@@ -190,8 +190,6 @@ void HttpResponse::buildResponse(HttpRequest& req)
 				this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
 		}
 	}
-
-
 	this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(codeStatus) + "\r\n";
 	if (this->codeStatus >= 400 || dirExists(this->path))
 			this->fullResponse += "Content-Type: text/html\r\n";

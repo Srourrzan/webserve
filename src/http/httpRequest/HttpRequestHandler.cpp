@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/20 18:45:31 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/31 20:33:49 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,127 +16,145 @@
 HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
     : req(r), finalPath("") , root(""), cgiBin(""), uploadPath(""), uri(""), path(""), body(""), location(NULL)
 {
-    body = req.getBody();
-    location = req.getLocation();
-    if (location)
-    {
-        root = location->ctx.root;
-        path = buildPath(root, location->path, req.getUri());
-        cgiBin = location->ctx.cgiBinPath;
-        uploadPath = location->uploadPath;
-    }
+	body = req.getBody();
+	location = req.getLocation();
+	if (location)
+	{
+		root = location->ctx.root;
+		path = buildPath(root, location->path, req.getUri());
+		cgiBin = location->ctx.cgiBinPath;
+		uploadPath = location->uploadPath;
+	}
 }
 
 RequestStatus HttpRequestHandler::handleRequest()
 {
-    if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
-        return REQ_INTERNAL_SERVER_ERROR;
-
-    if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
-        return REQ_NOT_FOUND;
-
-    if (isCgiRequest())
-        return handleCgi();
-
-    if (req.getMethod() == "GET")
-        return handleGet();
-    else if (req.getMethod() == "POST")
-        return handlePost();
-    else if (req.getMethod() == "DELETE")
-        return handleDelete(path);
-
-    return REQ_METHOD_NOT_ALLOWED;
+	LOG_INFO();
+	std::cout << "Request method: "
+						<< req.getMethod()
+						<< std::endl;
+	LOG_INFO();
+	std::cout << "handleRequest: location@"
+						<< location
+						<< " cgiEnabled= "
+						<< location->cgiEnabled
+						<< std::endl;
+	if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
+		return REQ_INTERNAL_SERVER_ERROR;
+	if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
+		return REQ_NOT_FOUND;
+	if (isCgiRequest())
+	{
+		LOG_INFO();
+		std::cout << "THis is a CGI request"
+							<< std::endl;
+		return handleCgi();
+	}
+	if (req.getMethod() == "GET")
+		return handleGet();
+	else if (req.getMethod() == "POST")
+		return handlePost();
+	else if (req.getMethod() == "DELETE")
+		return handleDelete(path);
+	return REQ_METHOD_NOT_ALLOWED;
 }
 
 bool HttpRequestHandler::isCgiRequest()
 {
-    if (!location->cgiEnabled)
-        return false;
-    size_t dotPos = path.rfind('.');
-    if (dotPos == std::string::npos)
-        return false;
-    std::string ext = path.substr(dotPos + 1);
-    for (size_t i = 0; i < location->cgiExtensions.size(); i++)
-    {
-        if (ext == location->cgiExtensions[i])
-            return true;
-    }
-    return false;
+	LOG_INFO();
+	std::cout << "is cgi enabled? "
+						<< location->cgiEnabled
+						<< std::endl;
+	if (!location->cgiEnabled)
+		return false;
+	LOG_INFO();
+	std::cout << "Here"
+						<< std::endl;
+	size_t dotPos = path.rfind('.');
+	if (dotPos == std::string::npos)
+		return false;
+	std::string ext = path.substr(dotPos + 1);
+	for (size_t i = 0; i < location->cgiExtensions.size(); i++)
+	{
+		if (ext == location->cgiExtensions[i])
+			return true;
+	}
+	return false;
 }
 
 RequestStatus HttpRequestHandler::handleCgi()
 {
-    if (path.find(cgiBin) != 0)
-        return REQ_FORBIDDEN;    
-    if (!hasAccess(path, X_OK))
-        return REQ_FORBIDDEN;
-    finalPath = path;
-    
-    // cgi execuation here
-    return REQ_OK;
+	if (path.find(cgiBin) != 0)
+		return REQ_FORBIDDEN;    
+	if (!hasAccess(path, X_OK))
+		return REQ_FORBIDDEN;
+	finalPath = path;
+	
+	// cgi execuation here
+	return REQ_OK;
 }
 
 RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
-    for (size_t i = 0; i < location->ctx.index.size(); i++)
-    {
-        std::string indexPath = joinPath(root, location->ctx.index[i]); //lhawther used root var
-        if (fileExists(indexPath))
-        {
-            if (!hasAccess(indexPath, R_OK))
-                return REQ_FORBIDDEN;
-            finalPath = indexPath;
-            return REQ_OK;
-        }
-    }
-    if (!hasAccess(dirPath, R_OK | X_OK))
-        return REQ_FORBIDDEN;
-    if (location->ctx.autoIndex)
-    {       
-        finalPath = dirPath;
-        return REQ_OK;
-    }
-    return REQ_FORBIDDEN;
+	for (size_t i = 0; i < location->ctx.index.size(); i++)
+	{
+		std::string indexPath = joinPath(root, location->ctx.index[i]); //lhawther used root var
+		if (fileExists(indexPath))
+		{
+			if (!hasAccess(indexPath, R_OK))
+				return REQ_FORBIDDEN;
+			finalPath = indexPath;
+			return REQ_OK;
+		}
+	}
+	if (!hasAccess(dirPath, R_OK | X_OK))
+		return REQ_FORBIDDEN;
+	if (location->ctx.autoIndex)
+	{
+		finalPath = dirPath;
+		return REQ_OK;
+	}
+	return REQ_FORBIDDEN;
 }
 
 RequestStatus HttpRequestHandler::handleGet()
 {
-    if (dirExists(path))
-        return checkIndexFiles(path);
-    if (!hasAccess(path, R_OK))
-        return REQ_FORBIDDEN;
-    finalPath = path;
-    std::cout << *this;
-    return REQ_OK;
+	if (dirExists(path))
+		return checkIndexFiles(path);
+	if (!hasAccess(path, R_OK))
+		return REQ_FORBIDDEN;
+	finalPath = path;
+	std::cout << *this;
+	return REQ_OK;
 }
 
 RequestStatus HttpRequestHandler::deleteDir(const std::string& dirPath)
 {
-    DIR* dir = opendir(dirPath.c_str());
-    if (!dir)
-        return REQ_INTERNAL_SERVER_ERROR;
-    if (!hasAccess(dirPath, R_OK | X_OK))
-    {
-        closedir(dir);
-        return REQ_FORBIDDEN;
-    }
-    struct dirent* entry;
-    while ((entry = readdir(dir)) != NULL)
-    {
-        std::string name = entry->d_name;
-        if (name == "." || name == "..")
-            continue;
-        RequestStatus status = handleDelete(dirPath + "/" + name);
-        if (status != REQ_NO_CONTENT)
-        {
-            closedir(dir);
-            return status;
-        }
-    }
-    closedir(dir);
-    if (rmdir(dirPath.c_str()) != 0)
-        return errno == EACCES ? REQ_FORBIDDEN : REQ_INTERNAL_SERVER_ERROR;
-    return REQ_NO_CONTENT;
+	DIR* dir = opendir(dirPath.c_str());
+	if (!dir)
+		return REQ_INTERNAL_SERVER_ERROR;
+	if (!hasAccess(dirPath, R_OK | X_OK))
+	{
+		closedir(dir);
+		return REQ_FORBIDDEN;
+	}
+	struct dirent* entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name == "." || name == "..")
+			continue;
+		RequestStatus status = handleDelete(dirPath + "/" + name);
+		if (status != REQ_NO_CONTENT)
+		{
+			closedir(dir);
+			return status;
+		}
+	}
+	closedir(dir);
+	if (rmdir(dirPath.c_str()) != 0)
+		return errno == EACCES ? REQ_FORBIDDEN : REQ_INTERNAL_SERVER_ERROR;
+	return REQ_NO_CONTENT;
 }
 
 RequestStatus HttpRequestHandler::handleDelete(const std::string& path)
@@ -152,15 +170,15 @@ RequestStatus HttpRequestHandler::handleDelete(const std::string& path)
 
 RequestStatus HttpRequestHandler::writeToFile(const std::string& body)
 {
-    int fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd == -1)
-        return errno == EACCES ? REQ_FORBIDDEN : REQ_INTERNAL_SERVER_ERROR;
-    size_t written = write(fd, body.c_str(), body.size());
-    close(fd);
-    if (written != body.size())
-        return REQ_INTERNAL_SERVER_ERROR;
-    finalPath = path;
-    return REQ_CREATED;
+	int fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+	if (fd == -1)
+		return errno == EACCES ? REQ_FORBIDDEN : REQ_INTERNAL_SERVER_ERROR;
+	size_t written = write(fd, body.c_str(), body.size());
+	close(fd);
+	if (written != body.size())
+		return REQ_INTERNAL_SERVER_ERROR;
+	finalPath = path;
+	return REQ_CREATED;
 }
 
 RequestStatus HttpRequestHandler::handlePost()
@@ -200,5 +218,5 @@ std::ostream& operator<< (std::ostream &out, const HttpRequestHandler& data)
 
 const std::string& HttpRequestHandler::getFinalPath() const
 {
-    return finalPath;
+	return finalPath;
 }

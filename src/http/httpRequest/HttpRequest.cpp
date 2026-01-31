@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/20 20:19:25 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/01/31 20:24:23 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,72 +114,72 @@ void HttpRequest::handleErrorPageIfNeeded()
 
 const std::string& HttpRequest::getMethod() const
 {
-    return method;
+	return method;
 }
 
 const std::string& HttpRequest::getUri() const
 {
-    return uri;
+	return uri;
 }
 
 const std::string& HttpRequest::getHttpVersion() const
 {
-    return httpVersion;
+	return httpVersion;
 }
 
 const std::map<std::string, std::string>& HttpRequest::getHeaders() const
 {
-    return headers;
+	return headers;
 }
 
 const std::string& HttpRequest::getBody() const
 {
-    return body;
+	return body;
 }
 
 short HttpRequest::getRedirectCode() const
 {
-    return redirectCode;
+	return redirectCode;
 }
 
 const std::string& HttpRequest::getRedirectUri() const
 {
-    return redirectUri;
+	return redirectUri;
 }
 
 const RequestStatus &HttpRequest::getStatus() const
 {
-    return status;
+	return status;
 }
 
 const LocationConfig* HttpRequest::getLocation() const
 {
-    return location;
+	return location;
 }
 
 const ServerConfig* HttpRequest::getServer() const
 {
-    return server;
+	return server;
 }
 
 const std::string& HttpRequest::getFinalPath() const
 {
-    return finalPath;
+	return finalPath;
 }
 
 const HttpConfig& HttpRequest::getHttpConfig() const
 {
-    return httpConfig;
+	return httpConfig;
 }
 
 const std::string HttpRequest::getLocalIp() const
 {
-    return _localIp;
+	return _localIp;
 }
 
 int HttpRequest::getLocalPort() const
 {
-    return _localPort;
+	return _localPort;
 }
 
 std::ostream & operator<< (std::ostream & out, const HttpRequest & data)

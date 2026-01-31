@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequestValidator.cpp                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:06:52 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/08 21:48:34 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/01/31 20:51:09 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,60 +129,55 @@ RequestStatus HttpRequestValidator::validateBody()
 
 RequestStatus HttpRequestValidator::validateContentLength()
 {
-    const std::map<std::string,std::string>& headers = req.getHeaders();
-    if (!headers.count("Content-Length"))
-        return REQ_NOT_IMPLEMENTED;
-    size_t contentLength = strToUL(headers.at("Content-Length"));
-    if (body.size() != contentLength)
-        return REQ_BAD_REQUEST;
-    return REQ_OK;
+	const std::map<std::string,std::string>& headers = req.getHeaders();
+	if (!headers.count("Content-Length"))
+		return REQ_NOT_IMPLEMENTED;
+	size_t contentLength = strToUL(headers.at("Content-Length"));
+	if (body.size() != contentLength)
+		return REQ_BAD_REQUEST;
+	return REQ_OK;
 }
 
 RequestStatus HttpRequestValidator::validateChunkedEncoding()
 {
-    const std::map<std::string,std::string>& headers = req.getHeaders();
-    if (!headers.count("Transfer-Encoding"))
-        return validateContentLength();
-    if (headers.at("Transfer-Encoding") != "chunked")
-        return REQ_NOT_IMPLEMENTED;
-    if (!unchunkBody(body))
-        return REQ_BAD_REQUEST;
-    return REQ_OK;
+	const std::map<std::string,std::string>& headers = req.getHeaders();
+	if (!headers.count("Transfer-Encoding"))
+		return validateContentLength();
+	if (headers.at("Transfer-Encoding") != "chunked")
+		return REQ_NOT_IMPLEMENTED;
+	if (!unchunkBody(body))
+		return REQ_BAD_REQUEST;
+	return REQ_OK;
 }
 
 bool HttpRequestValidator::unchunkBody(std::string &body)
 {
-    std::istringstream stream(body);
-    std::ostringstream unchunked;
-    std::string line;
+	std::istringstream stream(body);
+	std::ostringstream unchunked;
+	std::string line;
 
-    while (std::getline(stream, line))
-    {
-        if (line == "0")
-            break;
-
-        size_t pos = line.find(';');
-        if (pos != std::string::npos) line = line.substr(0, pos);
-
-        size_t chunkSize;
-        std::istringstream hex(line);
-        hex >> std::hex >> chunkSize;
-        if (hex.fail())
-            return false;
-
-        std::vector<char> buffer(chunkSize);
-        stream.read(&buffer[0], chunkSize);
-        if (stream.gcount() != (std::streamsize)chunkSize)
-            return false;
-
-        unchunked.write(&buffer[0], chunkSize);
-        if (unchunked.fail())
-            return false;
-        std::getline(stream, line);
-    }
-
-    body = unchunked.str();
-    return true;
+	while (std::getline(stream, line))
+	{
+		if (line == "0")
+			break;
+		size_t pos = line.find(';');
+		if (pos != std::string::npos) line = line.substr(0, pos);
+		size_t chunkSize;
+		std::istringstream hex(line);
+		hex >> std::hex >> chunkSize;
+		if (hex.fail())
+			return false;
+		std::vector<char> buffer(chunkSize);
+		stream.read(&buffer[0], chunkSize);
+		if (stream.gcount() != (std::streamsize)chunkSize)
+			return false;
+		unchunked.write(&buffer[0], chunkSize);
+		if (unchunked.fail())
+			return false;
+		std::getline(stream, line);
+	}
+	body = unchunked.str();
+	return true;
 }
 
 const std::string& HttpRequestValidator::getBody() const
