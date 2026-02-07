@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 21:37:18 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/07 15:35:16 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -205,18 +205,10 @@ const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) co
 	}
 	if (bestMatch)
 	{
-		LOG_INFO();
-		std::cout << "bestMatch.path: "
-							<< bestMatch->path
-							<< std::endl;
 		return bestMatch;
 	}
 	if (defaultMatch)
 	{
-		LOG_INFO();
-		std::cout << "defaultMatch.path: "
-							<< defaultMatch->path
-							<< std::endl;
 		return defaultMatch;
 	}
 	return NULL;

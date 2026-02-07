@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/28 23:31:33 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/20 20:02:40 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/07 16:04:37 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,8 +42,9 @@ public:
     void processRawRequest();
     Cgi& getCgi();
     bool cgiFlag;
+    void setStatus(RequestStatus newStatus);
+    void setFinalPath(std::string &path);
 
-        // State state;
 
 private:
     const HttpConfig httpConfig;

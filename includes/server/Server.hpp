@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 12:44:18 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/07 16:42:18 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,6 +35,7 @@
 #define CLIENT_TIMEOUT 300
 
 # define LOG_INFO() std::cout << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
+# define LOG_ERR() std::cerr << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
 
 struct Socket
 {

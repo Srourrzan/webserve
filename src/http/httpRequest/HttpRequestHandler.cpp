@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 20:33:49 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/07 16:04:55 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,25 +34,12 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
 
 RequestStatus HttpRequestHandler::handleRequest()
 {
-	LOG_INFO();
-	std::cout << "Request method: "
-						<< req.getMethod()
-						<< std::endl;
-	LOG_INFO();
-	std::cout << "handleRequest: location@"
-						<< location
-						<< " cgiEnabled= "
-						<< location->cgiEnabled
-						<< std::endl;
 	if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
 		return REQ_INTERNAL_SERVER_ERROR;
 	if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
 		return REQ_NOT_FOUND;
 	if (isCgiRequest())
 	{
-		LOG_INFO();
-		std::cout << "THis is a CGI request"
-							<< std::endl;
 		return handleCgi();
 	}
 	if (req.getMethod() == "GET")
@@ -66,15 +53,8 @@ RequestStatus HttpRequestHandler::handleRequest()
 
 bool HttpRequestHandler::isCgiRequest()
 {
-	LOG_INFO();
-	std::cout << "is cgi enabled? "
-						<< location->cgiEnabled
-						<< std::endl;
 	if (!location->cgiEnabled)
 		return false;
-	LOG_INFO();
-	std::cout << "Here"
-						<< std::endl;
 	size_t dotPos = path.rfind('.');
 	if (dotPos == std::string::npos)
 		return false;
@@ -100,6 +80,14 @@ RequestStatus HttpRequestHandler::handleCgi()
 	if (!hasAccess(path, X_OK))
 		return REQ_FORBIDDEN;
 	finalPath = path;
+	LOG_INFO();
+	std::cout << "final path "
+						<< finalPath
+						<< std::endl;
+	req.setFinalPath(finalPath);
+	LOG_INFO();
+	std::cout << "calling cgi"
+						<< std::endl;
 	req.getCgi().executeCgi(req);
 	// cgi execuation here
 	return REQ_OK;
