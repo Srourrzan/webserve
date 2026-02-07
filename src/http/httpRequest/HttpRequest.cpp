@@ -27,7 +27,10 @@ HttpRequest::HttpRequest(
       _localPort(localPort),
       request(reqStr),
       redirectCode(0)
+	  //addcgi
+	  
 {
+
     processRawRequest();
 }
 
@@ -47,8 +50,13 @@ HttpRequest::HttpRequest(const HttpRequest& other)
 		finalPath(other.finalPath),
 		redirectUri(other.redirectUri),
 		redirectCode(other.redirectCode)
+		//add cgi
 {}
 
+Cgi& HttpRequest::getCgi()
+{
+	return cgi;
+}
 void HttpRequest::processRawRequest()
 {
 	parseRequest();
@@ -60,6 +68,7 @@ void HttpRequest::processRawRequest()
 		return;
 
 	handleRequest();
+	// state = READING;
 	return;
 }
 

@@ -18,6 +18,7 @@
 # include <sys/stat.h>
 # include <unistd.h>
 # include "Server.hpp"
+#include <sstream>
 
 struct Socket;
 
@@ -31,5 +32,5 @@ std::string     joinPath(const std::string& a, const std::string& b);
 void            stripCRLF(std::string& body);
 bool            isValidFileName(std::string& fileName);
 void            socketInfo(Socket *socket);
-
+std::string     intToString(int value);
 #endif

@@ -46,6 +46,7 @@ struct Socket
     std::time_t lastActivity;
     size_t totalSent;
 	std::string responseString;
+	// bool isCgiReady;
 };
 
 class Server

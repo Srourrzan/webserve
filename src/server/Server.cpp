@@ -14,6 +14,12 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
+// void SetStatus(State& currentState, State newState)
+// {
+// 	currentState = newState;
+// }
+
+
 Server::Server(const HttpConfig& config) : _config(config)
 {
     this->_listenSockets.clear();
@@ -322,18 +328,29 @@ void Server::readFromClient(Socket& client)
 			localPort = ls->port;
 		}
 		HttpRequest request(_config, client.buffer, localIp, localPort);
+				// SetStatus(request.state, PROCESSING);
+
 		std::cout << "\n===== HttpRequest Info =====\n" << std::endl;
 		std::cout << request;
 		std::cout << "\n============================\n" << std::endl;
-		response.buildResponse(request);
-			std::cout << response;
+			// if(isCgiRequest())
+			// {
+			// 	// response.buildCGIResponse(request);
+
+			// }
+			// else
+			response.buildResponse(request);
+		std::cout << response;
 		client.responseString = response.getFullResponse();
 			changePollEvent(client.fd, POLLOUT);
+			// SetStatus(request.state, SENDING);
 	}
 }
 
+
 void Server::writeToClient(Socket& client)
 {
+
 	// std::cout << "Writing response to client fd: " << client.fd << std::endl;
 	std::string& response = client.responseString;
 	// std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
@@ -378,13 +395,17 @@ void Server::handleClientSocket(size_t& index)
 	}
 	if (this->_pollFds[index].revents & POLLIN)
 	{
+		//SetStatus(req.state, READING); 
 		readFromClient(*client);
 		client = findSocket(this->_clientSockets, fd);
 		if (!client)
 			return;
 	}
 	if (this->_pollFds[index].revents & POLLOUT)
+	{
+		//SetStatus(req.state, SENDING);
 		writeToClient(*client);
+	}
 }
 
 void Server::checkClientTimeouts()

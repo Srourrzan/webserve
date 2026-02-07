@@ -1,5 +1,25 @@
 #ifndef CGI_HPP
 # define CGI_HPP
+#include <map>
+#include <string>
+
+class HttpRequest;
+class Cgi{
+	private:
+	std::map<std::string, std::string>  cgiEnv;
+	char **envp;
+
+
+	public:
+	void buildCgiEnv(HttpRequest& req);
+	void setCgi(const Cgi& c);
+	char** cgiMaptoChar(std::map <std::string,std::string>& map);
+	void prepareCgiEnv(HttpRequest& req);
+	void executeCgi(HttpRequest& req);
+
+
+};
+
 
 /*
 meta-varibale-name = "AUTH_TYPE" | "CONTENT_LENGTH" |

@@ -12,6 +12,11 @@
 
 #include "HttpRequestHandler.hpp"
 #include "HttpRequest.hpp"
+#include "Cgi.hpp"
+#include "HttpResponse.hpp"
+#include <sstream>
+
+
 
 HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
     : req(r), finalPath("") , root(""), cgiBin(""), uploadPath(""), uri(""), path(""), body(""), location(NULL)
@@ -82,6 +87,12 @@ bool HttpRequestHandler::isCgiRequest()
 	return false;
 }
 
+// std::string intToString( int value) {
+//     std::stringstream ss; 
+//     ss << value;          
+//     return ss.str();     
+// }
+
 RequestStatus HttpRequestHandler::handleCgi()
 {
 	if (path.find(cgiBin) != 0)
@@ -89,10 +100,12 @@ RequestStatus HttpRequestHandler::handleCgi()
 	if (!hasAccess(path, X_OK))
 		return REQ_FORBIDDEN;
 	finalPath = path;
-	
+	req.getCgi().executeCgi(req);
 	// cgi execuation here
 	return REQ_OK;
 }
+
+
 
 RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {

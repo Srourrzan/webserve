@@ -16,6 +16,7 @@
 #include "RequestStatus.hpp"
 #include <string>
 #include <map>
+#include"Cgi.hpp"
 
 class HttpRequest
 {
@@ -39,6 +40,10 @@ public:
     const std::string getLocalIp() const;
     int getLocalPort() const ;
     void processRawRequest();
+    Cgi& getCgi();
+    bool cgiFlag;
+
+        // State state;
 
 private:
     const HttpConfig httpConfig;
@@ -61,6 +66,7 @@ private:
     void validateRequest();
     void handleRequest();
     void handleErrorPageIfNeeded();
+    Cgi cgi;
 
 };
 

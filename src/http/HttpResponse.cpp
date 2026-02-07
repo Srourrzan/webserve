@@ -101,11 +101,11 @@ std::string HttpResponse::getFullResponse() const {
     return this->fullResponse;
 }
 
-std::string intToString( int value) {
-    std::stringstream ss; 
-    ss << value;          
-    return ss.str();     
-}
+// std::string intToString( int value) {
+//     std::stringstream ss; 
+//     ss << value;          
+//     return ss.str();     
+// }
 
 std::string HttpResponse::buildTree(const std::string& path, const std::string& uri) {
     std::string html = "<ul>";
@@ -234,6 +234,8 @@ int HttpResponse::getCodeStatus() const
 {
 	return (this->codeStatus);
 }
+
+
 
 std::ostream& operator<< (std::ostream &out, const HttpResponse& data)
 {
