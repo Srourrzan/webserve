@@ -2,6 +2,7 @@
 #define CGI_HPP
 #include <map>
 #include <string>
+#include <sys/types.h>
 
 class HttpRequest;
 class Cgi
@@ -11,7 +12,12 @@ private:
 	char **envp;
 	std::string cgiOutput;
 	std::string cgiHeaders;
-	std::string cgiBody;
+	size_t cgiBodySent;
+	pid_t pid;
+	int stdinFd;
+	int stdoutFd;
+	bool stdinClosed;
+	bool stdoutClosed;
 
 public:
 	void buildCgiEnv(HttpRequest &req);
@@ -19,8 +25,11 @@ public:
 	char **cgiMaptoChar(std::map<std::string, std::string> &map);
 	void prepareCgiEnv(HttpRequest &req);
 	void executeCgi(HttpRequest &req);
-	void parseCgi(HttpRequest& req);
-
+	void parseCgi(HttpRequest &req);
+	void handleCgiBody(HttpRequest &request);
+	void handleCgiOutput(HttpRequest &request);
+	bool isStdinClosed() const;
+    bool isStdoutClosed() const;
 };
 
 /*

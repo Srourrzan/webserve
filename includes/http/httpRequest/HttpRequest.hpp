@@ -41,7 +41,7 @@ public:
     int getLocalPort() const ;
     void processRawRequest();
     Cgi& getCgi();
-    bool cgiFlag;
+    bool isCgi;
     void setStatus(RequestStatus newStatus);
     void setFinalPath(std::string &path);
 
