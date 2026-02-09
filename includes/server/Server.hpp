@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <arpa/inet.h>
+#include "HttpRequest.hpp"
 #include "ConfigValidator.hpp"
 
 #define BUFFER_SIZE 4096
@@ -47,6 +48,7 @@ struct Socket
     std::time_t lastActivity;
     size_t totalSent;
 	std::string responseString;
+	HttpRequest *request; // اجعله يحمل الطلب الحالي
 	// bool isCgiReady;
 };
 

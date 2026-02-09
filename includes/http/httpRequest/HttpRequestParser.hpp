@@ -20,25 +20,25 @@
 
 class HttpRequestParser
 {
-    public:
-        HttpRequestParser(const std::string& rawRequest);
-        
-        RequestStatus parse(); 
-        const std::string& getMethod() const;
-        const std::string& getUri() const;
-        const std::string& getHttpVersion() const;
-        const std::map<std::string, std::string>& getHeaders() const;
-        const std::string& getBody() const;
+public:
+    HttpRequestParser(const std::string &rawRequest);
 
-    private:
-        std::istringstream stream;
-        std::string method;
-        std::string uri;
-        std::string httpVersion;
-        std::map<std::string, std::string> headers;
-        std::string body;
+    RequestStatus parse();
+    const std::string &getMethod() const;
+    const std::string &getUri() const;
+    const std::string &getHttpVersion() const;
+    const std::map<std::string, std::string> &getHeaders() const;
+    const std::string &getBody() const;
 
-        RequestStatus parseRequestLine();
-        RequestStatus parseHeaders();
-        RequestStatus parseBody();
+private:
+    std::istringstream stream;
+    std::string method;
+    std::string uri;
+    std::string httpVersion;
+    std::map<std::string, std::string> headers;
+    std::string body;
+
+    RequestStatus parseRequestLine();
+    RequestStatus parseHeaders();
+    RequestStatus parseBody();
 };

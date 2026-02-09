@@ -11,6 +11,14 @@ bool Cgi::isStdinClosed() const { return stdinClosed; }
 
 bool Cgi::isStdoutClosed() const { return stdoutClosed; }
 
+// int Cgi::getStdoutFd() const {
+//     return this->stdoutFd;
+// }
+
+// int Cgi::getStdinFd() const {
+//     return this->stdinFd;
+// }
+
 void Cgi::handleCgiBody(HttpRequest &request)
 {
 	const std::string &body = request.getBody();
@@ -118,30 +126,6 @@ void Cgi::setCgi(const Cgi &c)
 {
 	*this = c;
 }
-
-// void Cgi::readCgi(int cgiFd)
-// {
-//     char buf[BUFFER_SIZE];
-
-//     ssize_t n = read(cgiFd, buf, sizeof(buf));
-//     if (n > 0)
-//     {
-//         cgiOutput.append(buf, n);
-//     }
-//     else if (n == 0)
-//     {
-//         close(cgiFd);
-//         stdoutClosed = true;
-//     }
-//     else
-//     {
-//         if (errno == EAGAIN || errno == EINTR)
-//             return;
-//         perror("read CGI");
-//         req.getCgi().stdoutClosed = true;
-//         close(cgiFd);
-//     }
-// }
 
 void Cgi::executeCgi(HttpRequest &req)
 {

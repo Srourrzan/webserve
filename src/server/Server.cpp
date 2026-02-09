@@ -333,19 +333,9 @@ void Server::readFromClient(Socket &client)
 		std::cout << request;
 		std::cout << "\n============================\n"
 				  << std::endl;
+
 	
-		// if (request.isCgi && (!request.getCgi().isStdinClosed()))
-		// {
-
-		// 	request.getCgi().handleCgiBody(request);
-		// }
-		// else if (request.isCgi && (!request.getCgi().isStdoutClosed()))
-		// {
-
-		// 	request.getCgi().handleCgiOutput(request);
-		// }
-		// else
-			response.buildResponse(request);
+		response.buildResponse(request);
 		std::cout << response;
 		client.responseString = response.getFullResponse();
 		changePollEvent(client.fd, POLLOUT);
@@ -428,6 +418,8 @@ void Server::checkClientTimeouts()
 
 void Server::run()
 {
+//inside server map fd - req
+//add fd 
 	initPollFds();
 	while (true)
 	{
@@ -451,6 +443,7 @@ void Server::run()
 				continue;
 			if (findSocket(this->_listenSockets, this->_pollFds[i].fd) != NULL)
 				handleListenSocket(i);
+	
 			else
 				handleClientSocket(i);
 		}

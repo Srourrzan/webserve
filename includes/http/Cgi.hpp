@@ -30,6 +30,7 @@ public:
 	void handleCgiOutput(HttpRequest &request);
 	bool isStdinClosed() const;
     bool isStdoutClosed() const;
+	
 };
 
 /*
