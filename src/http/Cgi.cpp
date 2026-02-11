@@ -73,6 +73,12 @@ void Cgi::handleCgiOutput(HttpRequest &request)
 		close(cgi.stdoutFd);
 		cgi.stdoutFd = -1;
 		cgi.stdoutClosed = true;
+
+		if (cgi.cgiOutput.empty())
+        {
+            std::cerr << "CGI Error: Empty response" << std::endl;
+            request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
+        }
 	}
 	else if (bytes > 0)
 	{
@@ -191,13 +197,45 @@ void Cgi::executeCgi(HttpRequest &req)
 	// write
 	// read
 
-	wait(NULL); // wait the child
 	//add the fds to the polll 
 	req.getCgi().pid = pid;
 	req.getCgi().stdinFd = stdin_fds[1];
 	req.getCgi().stdoutFd = stdout_fds[0];
 	req.getCgi().stdinClosed = false;
 	req.getCgi().stdoutClosed = false;
-
 	req.isCgi = true;
+
+	const int CGI_TIMEOUT = 5; 
+    time_t start = time(NULL);
+    int status = 0;
+    while (true)
+    {
+        pid_t ret = waitpid(pid, &status, WNOHANG);
+        if (ret == pid)
+            break;
+
+        if (time(NULL) - start > CGI_TIMEOUT) 
+        {
+            kill(pid, SIGKILL);
+            req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT)); 
+            return;
+        }
+
+        usleep(10000); 
+    }
+
+    if (WIFEXITED(status))
+    {
+        int exitCode = WEXITSTATUS(status);
+        if (exitCode != 0)
+        {
+            req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+            return;
+        }
+    }
+    else
+    {
+        req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+        return;
+    }
 }
