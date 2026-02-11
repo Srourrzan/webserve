@@ -11,13 +11,15 @@ bool Cgi::isStdinClosed() const { return stdinClosed; }
 
 bool Cgi::isStdoutClosed() const { return stdoutClosed; }
 
-// int Cgi::getStdoutFd() const {
-//     return this->stdoutFd;
-// }
+int Cgi::getStdoutFd() const
+{
+	return this->stdoutFd;
+}
 
-// int Cgi::getStdinFd() const {
-//     return this->stdinFd;
-// }
+int Cgi::getStdinFd() const
+{
+	return this->stdinFd;
+}
 
 void Cgi::handleCgiBody(HttpRequest &request)
 {
@@ -186,7 +188,11 @@ void Cgi::executeCgi(HttpRequest &req)
 	close(stdout_fds[1]);
 	fcntl(stdin_fds[1], F_SETFL, O_NONBLOCK);
 	fcntl(stdout_fds[0], F_SETFL, O_NONBLOCK);
+	// write
+	// read
 
+	wait(NULL); // wait the child
+	//add the fds to the polll 
 	req.getCgi().pid = pid;
 	req.getCgi().stdinFd = stdin_fds[1];
 	req.getCgi().stdoutFd = stdout_fds[0];

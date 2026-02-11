@@ -29,8 +29,10 @@ public:
 	void handleCgiBody(HttpRequest &request);
 	void handleCgiOutput(HttpRequest &request);
 	bool isStdinClosed() const;
-    bool isStdoutClosed() const;
-	
+	bool isStdoutClosed() const;
+	int getStdoutFd() const;
+
+	int getStdinFd() const;
 };
 
 /*
