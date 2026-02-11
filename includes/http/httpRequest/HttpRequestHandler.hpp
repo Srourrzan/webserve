@@ -32,6 +32,7 @@ class HttpRequestHandler
         const std::string& getFinalPath() const;
         void setErrorPagePath();
 
+        bool isCgi;
     private:
         HttpRequest& req;
         std::string finalPath; 

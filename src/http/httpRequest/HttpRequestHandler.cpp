@@ -79,6 +79,7 @@ RequestStatus HttpRequestHandler::handleCgi()
 		return REQ_FORBIDDEN;    
 	if (!hasAccess(path, X_OK))
 		return REQ_FORBIDDEN;
+
 	finalPath = path;
 	LOG_INFO();
 	std::cout << "final path "
@@ -90,6 +91,7 @@ RequestStatus HttpRequestHandler::handleCgi()
 						<< std::endl;
 	req.getCgi().executeCgi(req);
 	//check error work on
+	req.isCgi = true;
 	
 	return REQ_OK;
 }

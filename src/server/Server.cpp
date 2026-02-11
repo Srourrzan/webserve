@@ -266,6 +266,18 @@ void Server::changePollEvent(int fd, short events)
 	}
 }
 
+void Server::removePollFd(int fd)
+{
+	for (size_t i = 0; i < this->_pollFds.size(); i++)
+	{
+		if (this->_pollFds[i].fd == fd)
+		{
+			this->_pollFds.erase(this->_pollFds.begin() + i);
+			return;
+		}
+	}
+}
+
 void Server::handleSocketError(int fd, size_t &index, bool isListen)
 {
 	std::cerr << "Server Info: Closing " << (isListen ? "listen" : "client")
@@ -328,6 +340,15 @@ void Server::readFromClient(Socket &client)
 		}
 		HttpRequest request(_config, client.buffer, localIp, localPort);
 
+		if (request.isCgi)
+		{
+			if (!request.getCgi().isStdoutClosed())
+				addToPoll(request.getCgi().getStdoutFd(), POLLIN);
+
+			if (!request.getCgi().isStdinClosed() && request.getMethod() == "POST")
+				addToPoll(request.getCgi().getStdinFd(), POLLOUT);
+		}
+		client.request = request; // Store the request in the client socket for later use
 		std::cout << "\n===== HttpRequest Info =====\n"
 				  << std::endl;
 		std::cout << request;
@@ -335,6 +356,7 @@ void Server::readFromClient(Socket &client)
 				  << std::endl;
 
 	
+		
 		response.buildResponse(request);
 		std::cout << response;
 		client.responseString = response.getFullResponse();
@@ -388,9 +410,28 @@ void Server::handleClientSocket(size_t &index)
 		handleSocketError(fd, index, false);
 		return;
 	}
+	
+    HttpRequest &req = client->request;
+
+	if (req.isCgi)
+	{
+		if (req.getCgi().getStdoutFd() == fd && this->_pollFds[index].revents & POLLIN)
+		{
+			req.getCgi().handleCgiOutput(req);
+			if (req.getCgi().isStdoutClosed())
+                removePollFd(fd);
+			return ;
+		}
+		 if (req.getCgi().getStdinFd() == fd && (this->_pollFds[index].revents & POLLOUT))
+        {
+            req.getCgi().handleCgiBody(req); 
+            if (req.getCgi().isStdinClosed())
+                removePollFd(fd);
+            return;
+        }
+	}
 	if (this->_pollFds[index].revents & POLLIN)
 	{
-		// SetStatus(req.state, READING);
 		readFromClient(*client);
 		client = findSocket(this->_clientSockets, fd);
 		if (!client)
@@ -398,7 +439,6 @@ void Server::handleClientSocket(size_t &index)
 	}
 	if (this->_pollFds[index].revents & POLLOUT)
 	{
-		// SetStatus(req.state, SENDING);
 		writeToClient(*client);
 	}
 }

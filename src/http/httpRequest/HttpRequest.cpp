@@ -26,7 +26,8 @@ HttpRequest::HttpRequest(
 			_localIp(localIp),
 			_localPort(localPort),
 			request(reqStr),
-			redirectCode(0)
+			redirectCode(0), 
+			isCgi(false)
 // addcgi
 
 {
@@ -107,6 +108,7 @@ void HttpRequest::handleRequest()
 	HttpRequestHandler handler(*this);
 	status = handler.handleRequest();
 	finalPath = handler.getFinalPath();
+	isCgi = handler.isCgi;
 	if (status != REQ_OK)
 		handleErrorPageIfNeeded();
 }
