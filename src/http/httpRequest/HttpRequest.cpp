@@ -15,20 +15,61 @@
 #include "HttpRequestHandler.hpp"
 #include "HttpRequestParser.hpp"
 
+HttpRequest::HttpRequest() : httpConfig(),
+							 server(NULL),
+							 location(NULL),
+							 _localIp(),
+							 _localPort(),
+							 request(),
+							 redirectCode(),
+							 isCgi(false)
+{
+}
+
+bool HttpRequest::getIsCgi()
+{
+	return this->isCgi;
+}
+
+void HttpRequest::setIsCgi(bool value)
+{
+	this->isCgi = value;
+}
+HttpRequest &HttpRequest::operator=(const HttpRequest &request)
+{
+	if (this != &request)
+	{
+		this->method = request.method;
+		this->uri = request.uri;
+		this->httpVersion = request.httpVersion;
+		this->headers = request.headers;
+		this->body = request.body;
+		this->status = request.status;
+		this->finalPath = request.finalPath;
+		this->redirectUri = request.redirectUri;
+		this->redirectCode = request.redirectCode;
+		this->isCgi = request.isCgi;
+	}
+	return *this;
+}
+
+HttpRequest::~HttpRequest()
+{
+}
+
 HttpRequest::HttpRequest(
-		const HttpConfig &config,
-		const std::string &reqStr,
-		const std::string &localIp,
-		int localPort)
-		: httpConfig(config),
-			server(NULL),
-			location(NULL),
-			_localIp(localIp),
-			_localPort(localPort),
-			request(reqStr),
-			redirectCode(0), 
-			isCgi(false)
-// addcgi
+	const HttpConfig &config,
+	const std::string &reqStr,
+	const std::string &localIp,
+	int localPort)
+	: httpConfig(config),
+	  server(NULL),
+	  location(NULL),
+	  _localIp(localIp),
+	  _localPort(localPort),
+	  request(reqStr),
+	  redirectCode(0),
+	  isCgi(false)
 
 {
 
@@ -36,21 +77,21 @@ HttpRequest::HttpRequest(
 }
 
 HttpRequest::HttpRequest(const HttpRequest &other)
-		: httpConfig(other.httpConfig),
-			server(other.server),
-			location(other.location),
-			_localIp(other._localIp),
-			_localPort(other._localPort),
-			request(other.request),
-			method(other.method),
-			uri(other.uri),
-			httpVersion(other.httpVersion),
-			headers(other.headers),
-			body(other.body),
-			status(other.status),
-			finalPath(other.finalPath),
-			redirectUri(other.redirectUri),
-			redirectCode(other.redirectCode)
+	: httpConfig(other.httpConfig),
+	  server(other.server),
+	  location(other.location),
+	  _localIp(other._localIp),
+	  _localPort(other._localPort),
+	  request(other.request),
+	  method(other.method),
+	  uri(other.uri),
+	  httpVersion(other.httpVersion),
+	  headers(other.headers),
+	  body(other.body),
+	  status(other.status),
+	  finalPath(other.finalPath),
+	  redirectUri(other.redirectUri),
+	  redirectCode(other.redirectCode)
 // add cgi
 {
 }
@@ -197,23 +238,23 @@ int HttpRequest::getLocalPort() const
 std::ostream &operator<<(std::ostream &out, const HttpRequest &data)
 {
 	out << "HttpRequest Info: "
-			<< "\nStatus: "
-			<< data.getStatus()
-			<< "\nMethod: "
-			<< data.getMethod()
-			<< "\nURI: "
-			<< data.getUri()
-			<< "\nHTTP Version: "
-			<< data.getHttpVersion()
-			<< "\nlocation\n"
-			<< data.getLocation()
-			<< "\nRedirect Code: "
-			<< data.getRedirectCode()
-			<< "\nRedirect URI: "
-			<< data.getRedirectUri()
-			<< "\nFinal Path: "
-			<< data.getFinalPath()
-			<< "\nHeaders: ";
+		<< "\nStatus: "
+		<< data.getStatus()
+		<< "\nMethod: "
+		<< data.getMethod()
+		<< "\nURI: "
+		<< data.getUri()
+		<< "\nHTTP Version: "
+		<< data.getHttpVersion()
+		<< "\nlocation\n"
+		<< data.getLocation()
+		<< "\nRedirect Code: "
+		<< data.getRedirectCode()
+		<< "\nRedirect URI: "
+		<< data.getRedirectUri()
+		<< "\nFinal Path: "
+		<< data.getFinalPath()
+		<< "\nHeaders: ";
 	for (std::map<std::string, std::string>::const_iterator it = data.getHeaders().begin(); it != data.getHeaders().end(); ++it)
 		out << "  " << it->first << ": " << it->second << "\n";
 	out << "Body: [" << data.getBody() << "]\n";

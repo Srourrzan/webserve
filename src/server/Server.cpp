@@ -14,11 +14,6 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 
-// void SetStatus(State& currentState, State newState)
-// {
-// 	currentState = newState;
-// }
-
 Server::Server(const HttpConfig &config) : _config(config)
 {
 	this->_listenSockets.clear();
@@ -340,7 +335,7 @@ void Server::readFromClient(Socket &client)
 		}
 		HttpRequest request(_config, client.buffer, localIp, localPort);
 
-		if (request.isCgi)
+		if (request.getIsCgi())
 		{
 			if (!request.getCgi().isStdoutClosed())
 				addToPoll(request.getCgi().getStdoutFd(), POLLIN);
@@ -348,20 +343,19 @@ void Server::readFromClient(Socket &client)
 			if (!request.getCgi().isStdinClosed() && request.getMethod() == "POST")
 				addToPoll(request.getCgi().getStdinFd(), POLLOUT);
 		}
-		client.request = request; // Store the request in the client socket for later use
+		client.request = &request; 
 		std::cout << "\n===== HttpRequest Info =====\n"
 				  << std::endl;
 		std::cout << request;
 		std::cout << "\n============================\n"
 				  << std::endl;
-
-	
-		
-		response.buildResponse(request);
+		if (request.getIsCgi())
+			response.buildCgiResponse(request);
+		else
+			response.buildResponse(response, request);
 		std::cout << response;
 		client.responseString = response.getFullResponse();
 		changePollEvent(client.fd, POLLOUT);
-		// SetStatus(request.state, SENDING);
 	}
 }
 
@@ -411,21 +405,22 @@ void Server::handleClientSocket(size_t &index)
 		return;
 	}
 	
-    HttpRequest &req = client->request;
+	
+    HttpRequest* req = client->request;
 
-	if (req.isCgi)
+	if (req->getIsCgi())
 	{
-		if (req.getCgi().getStdoutFd() == fd && this->_pollFds[index].revents & POLLIN)
+		if (req->getCgi().getStdoutFd() == fd && this->_pollFds[index].revents & POLLIN)
 		{
-			req.getCgi().handleCgiOutput(req);
-			if (req.getCgi().isStdoutClosed())
+			req->getCgi().handleCgiOutput(*req);
+			if (req->getCgi().isStdoutClosed())
                 removePollFd(fd);
 			return ;
 		}
-		 if (req.getCgi().getStdinFd() == fd && (this->_pollFds[index].revents & POLLOUT))
+		 if (req->getCgi().getStdinFd() == fd && (this->_pollFds[index].revents & POLLOUT))
         {
-            req.getCgi().handleCgiBody(req); 
-            if (req.getCgi().isStdinClosed())
+            req->getCgi().handleCgiBody(*req); 
+            if (req->getCgi().isStdinClosed())
                 removePollFd(fd);
             return;
         }

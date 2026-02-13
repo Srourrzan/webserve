@@ -30,13 +30,14 @@
 #include <arpa/inet.h>
 #include "HttpRequest.hpp"
 #include "ConfigValidator.hpp"
-
 #define BUFFER_SIZE 4096
 #define POLL_TIMEOUT 1000
 #define CLIENT_TIMEOUT 300
 
 # define LOG_INFO() std::cout << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
 # define LOG_ERR() std::cerr << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
+
+class HttpRequest;
 
 struct Socket
 {
@@ -48,9 +49,8 @@ struct Socket
     std::time_t lastActivity;
     size_t totalSent;
 	std::string responseString;
+	HttpRequest *request; 
 
-	HttpRequest request; // اجعله يحمل الطلب الحالي
-	// bool isCgiReady;
 };
 
 class Server
@@ -60,7 +60,7 @@ public:
 	~Server();
 	void run();
 	std::vector<Socket> getListenSockets() const;
-	HttpRequest& req; //added
+	// HttpRequest& req; //added
 		
 private:
 	std::vector<struct pollfd> _pollFds;
@@ -90,6 +90,8 @@ private:
 	void initListenSockets();
 	void acceptClient(int listenFd);
 	void addClientSocket(int clientFd, int listenFd);
+	void removePollFd(int fd);
+
 };
 
 std::ostream& operator<< (std::ostream &out, const Server& data);

@@ -5,27 +5,31 @@
 class HttpResponse
 {
 private:
-	std::string fullResponse; //used
-	std::string path; //used
+	std::string fullResponse; // used
+	std::string path;		  // used
 	std::string header;
 	std::string body;
-	int codeStatus; //used
-	std::string buildTree(const std::string& path, const std::string& uri);
+	int codeStatus; // used
+	std::string buildTree(const std::string &path, const std::string &uri);
+	std::string contentOfFile;
+	bool fileIsComplete;
 
 public:
 	HttpResponse();
 	~HttpResponse() {}
-	bool canReadBody() const ;
-	void buildResponse(HttpRequest& req);
+	bool canReadBody() const;
+	void buildResponse(HttpResponse &response, HttpRequest &req);
 	std::string getStatusMsg(int code);
-	std::string fileToString(std::string path);
+	void fileToString(HttpResponse &response, HttpRequest &req, std::string path);
 	std::string getContentType(std::string path);
 	std::string getHeader() const;
 	std::string getBody() const;
 	std::string getPath() const;
 	int getCodeStatus() const;
+	void setCodeStatus(int input);
+	void buildCgiResponse(HttpRequest &req);
 	std::string getFullResponse() const;
-	std::string generateAutoIndex(const std::string& path, const std::string& uri);
+	std::string generateAutoIndex(const std::string &path, const std::string &uri);
 };
 
-std::ostream& operator<< (std::ostream &out, const HttpResponse& data);
+std::ostream &operator<<(std::ostream &out, const HttpResponse &data);

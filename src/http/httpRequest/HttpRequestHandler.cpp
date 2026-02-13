@@ -91,7 +91,7 @@ RequestStatus HttpRequestHandler::handleCgi()
 						<< std::endl;
 	req.getCgi().executeCgi(req);
 	//check error work on
-	req.isCgi = true;
+	req.setIsCgi(true);
 	
 	return REQ_OK;
 }

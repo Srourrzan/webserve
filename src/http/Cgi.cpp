@@ -11,6 +11,16 @@ bool Cgi::isStdinClosed() const { return stdinClosed; }
 
 bool Cgi::isStdoutClosed() const { return stdoutClosed; }
 
+void Cgi::setCgiHeaders(std::string input)
+{
+	this->cgiHeaders = input;
+}
+
+void Cgi::setContentType(std::string input)
+{
+	this->contentType = input;
+}
+
 int Cgi::getStdoutFd() const
 {
 	return this->stdoutFd;
@@ -19,6 +29,31 @@ int Cgi::getStdoutFd() const
 int Cgi::getStdinFd() const
 {
 	return this->stdinFd;
+}
+
+std::string Cgi::getContentType()
+{
+	return this->contentType;
+}
+
+std::string Cgi::getCgiOutput() const
+{
+	return this->cgiOutput;
+}
+
+std::string Cgi::getCgibody() const
+{
+	return this->cgiBody;
+}
+
+void Cgi::setCgiBody(std::string input)
+{
+	this->cgiBody = input;
+}
+
+std::string Cgi::getCgiHeaders() const
+{
+	return this->cgiHeaders;
 }
 
 void Cgi::handleCgiBody(HttpRequest &request)
@@ -75,10 +110,10 @@ void Cgi::handleCgiOutput(HttpRequest &request)
 		cgi.stdoutClosed = true;
 
 		if (cgi.cgiOutput.empty())
-        {
-            std::cerr << "CGI Error: Empty response" << std::endl;
-            request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
-        }
+		{
+			std::cerr << "CGI Error: Empty response" << std::endl;
+			request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
+		}
 	}
 	else if (bytes > 0)
 	{
@@ -197,45 +232,45 @@ void Cgi::executeCgi(HttpRequest &req)
 	// write
 	// read
 
-	//add the fds to the polll 
+	// add the fds to the polll
 	req.getCgi().pid = pid;
 	req.getCgi().stdinFd = stdin_fds[1];
 	req.getCgi().stdoutFd = stdout_fds[0];
 	req.getCgi().stdinClosed = false;
 	req.getCgi().stdoutClosed = false;
-	req.isCgi = true;
+	req.setIsCgi(true);
 
-	const int CGI_TIMEOUT = 5; 
-    time_t start = time(NULL);
-    int status = 0;
-    while (true)
-    {
-        pid_t ret = waitpid(pid, &status, WNOHANG);
-        if (ret == pid)
-            break;
+	const int CGI_TIMEOUT = 5;
+	time_t start = time(NULL);
+	int status = 0;
+	while (true)
+	{
+		pid_t ret = waitpid(pid, &status, WNOHANG);
+		if (ret == pid)
+			break;
 
-        if (time(NULL) - start > CGI_TIMEOUT) 
-        {
-            kill(pid, SIGKILL);
-            req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT)); 
-            return;
-        }
+		if (time(NULL) - start > CGI_TIMEOUT)
+		{
+			kill(pid, SIGKILL);
+			req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT));
+			return;
+		}
 
-        usleep(10000); 
-    }
+		usleep(10000);
+	}
 
-    if (WIFEXITED(status))
-    {
-        int exitCode = WEXITSTATUS(status);
-        if (exitCode != 0)
-        {
-            req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
-            return;
-        }
-    }
-    else
-    {
-        req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
-        return;
-    }
+	if (WIFEXITED(status))
+	{
+		int exitCode = WEXITSTATUS(status);
+		if (exitCode != 0)
+		{
+			req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+			return;
+		}
+	}
+	else
+	{
+		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+		return;
+	}
 }
