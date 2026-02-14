@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 20:10:03 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/14 18:27:39 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,6 +198,7 @@ void Server::addClientSocket(int clientFd, int listenFd)
 	cl.lastActivity = std::time(NULL);
 	cl.totalSent = 0;
 	cl.buffer.clear();
+	cl.request = NULL; //Razan
 	this->_clientSockets.push_back(cl);
 }
 
@@ -343,7 +344,7 @@ void Server::readFromClient(Socket &client)
 			if (!request.getCgi().isStdinClosed() && request.getMethod() == "POST")
 				addToPoll(request.getCgi().getStdinFd(), POLLOUT);
 		}
-		client.request = &request; 
+		client.request = NULL;
 		std::cout << "\n===== HttpRequest Info =====\n"
 				  << std::endl;
 		std::cout << request;
@@ -406,9 +407,9 @@ void Server::handleClientSocket(size_t &index)
 	}
 	
 	
-    HttpRequest* req = client->request;
+	HttpRequest* req = client->request;
 
-	if (req->getIsCgi())
+	if (req && req->getIsCgi())
 	{
 		if (req->getCgi().getStdoutFd() == fd && this->_pollFds[index].revents & POLLIN)
 		{

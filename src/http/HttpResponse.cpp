@@ -63,37 +63,79 @@ std::string HttpResponse::getStatusMsg(int code)
     }
 }
 
+// void HttpResponse::fileToString(HttpResponse &response, HttpRequest &req, std::string path)
+// {
+// 	std::ifstream file(path.c_str(), std::ios::binary);
+// 	if (!file.is_open())
+// 	{
+// 		LOG_ERR();
+// 		std::cerr << "Error : Can not open the file" << std::endl; // ask
+// 		req.setStatus(REQ_NOT_FOUND);
+// 		return;
+// 	}
+// 	char buf[BUFFER_SIZE];
+// 	file.read(buf, BUFFER_SIZE);
+// 	std::streamsize bytesRead = file.gcount();
+// 	if (file.peek() == std::char_traits<char>::eof())
+// 	{
+// 		response.fileIsComplete = true;
+// 		response.contentOfFile = "";
+// 		file.close();
+// 		LOG_INFO();
+// 		std::cout << "file is complete and content of file is empty string"
+// 							<< std::endl;
+// 		return;
+// 	}
+// 	if (bytesRead > 0)
+// 	{
+// 		response.contentOfFile.append(buf, bytesRead);
+// 	}
+// 	if (file.eof())
+// 	{
+// 		response.fileIsComplete = true;
+// 		file.close();
+// 	}
+// }
+
+// RAZAN
 void HttpResponse::fileToString(HttpResponse &response, HttpRequest &req, std::string path)
 {
-
     std::ifstream file(path.c_str(), std::ios::binary);
     if (!file.is_open())
     {
-        std::cerr << "Error : Can not open the file" << std::endl; // ask
+        LOG_ERR();
+        std::cerr << "Error: Cannot open file " << path << std::endl;
         req.setStatus(REQ_NOT_FOUND);
         return;
     }
+    
+    response.contentOfFile.clear();
+    response.fileIsComplete = false;
+    
     char buf[BUFFER_SIZE];
-    file.read(buf, BUFFER_SIZE);
-    std::streamsize bytesRead = file.gcount();
-    if (file.peek() == std::char_traits<char>::eof())
+    while (true)
     {
-        response.fileIsComplete = true;
-        response.contentOfFile = "";
-        file.close();
-        return;
-    }
-
-    if (bytesRead > 0)
-    {
+        file.read(buf, BUFFER_SIZE);
+        std::streamsize bytesRead = file.gcount();
+        
+        if (bytesRead <= 0)
+            break;
+            
         response.contentOfFile.append(buf, bytesRead);
     }
-
-    if (file.eof())
+    
+    if (file.bad())
     {
-        response.fileIsComplete = true;
-        file.close();
+        std::cerr << "Error reading file " << path << std::endl;
+        req.setStatus(REQ_INTERNAL_SERVER_ERROR);
+        return;
     }
+    
+    response.fileIsComplete = true;
+    file.close();
+    
+    LOG_INFO();
+    std::cout << "Successfully read " << response.contentOfFile.size() << " bytes from " << path << std::endl;
 }
 
 std::string toLowerStr(std::string str)
@@ -241,75 +283,104 @@ void HttpResponse::buildCgiResponse(HttpRequest &req)
 
 void HttpResponse::buildResponse(HttpResponse &response, HttpRequest &req)
 {
-    this->codeStatus = req.getStatus();
-    this->path = req.getFinalPath();
-    std::string physicalPath = req.getFinalPath();
-    std::string ConnectionValue;
-    LOG_INFO();
-    std::cout << " physical path: "
-              << physicalPath
-              << std::endl;
-    const LocationConfig *loc = req.getLocation();
-    LOG_INFO();
-    std::cout << " Location: "
-              << req.getLocation()
-              << std::endl;
-    LOG_INFO();
-    std::cout << " redirect code: "
-              << req.getRedirectCode()
-              << std::endl;
-    if (req.getRedirectCode() != 0)
-    {
-        this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
-        this->fullResponse += "Location: " + req.getRedirectUri() + "\r\n";
-        this->fullResponse += "Content-Length: 0\r\n";
-        this->fullResponse += "Connection: close\r\n\r\n";
-        return;
-    }
+	this->codeStatus = req.getStatus();
+	this->path = req.getFinalPath();
+	std::string physicalPath = req.getFinalPath();
+	std::string ConnectionValue;
+	LOG_INFO();
+	std::cout << " physical path: "
+						<< physicalPath
+						<< std::endl;
+	const LocationConfig *loc = req.getLocation();
+	LOG_INFO();
+	std::cout << " codeStatus: "
+						<< this->codeStatus
+						<< std::endl;
+	LOG_INFO();
+	std::cout << " redirect code: "
+						<< req.getRedirectCode()
+						<< std::endl;
+	if (req.getRedirectCode() != 0)
+	{
+		LOG_INFO();
 
-    else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
-    {
-        if (loc != NULL && loc->ctx.autoIndex == 1)
-        {
-            this->body = generateAutoIndex(this->path, req.getUri());
-        }
-    }
-    else
-    {
-        fileToString(response, req, this->path);
-        if (response.fileIsComplete)
-        {
-            this->body = contentOfFile;
-        }
-        if (this->body.empty() && this->codeStatus >= 400)
-        {
-            this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
-        }
-        else
-            return;
-    }
-    this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(codeStatus) + "\r\n";
-    if (this->codeStatus >= 400 || dirExists(this->path))
-        this->fullResponse += "Content-Type: text/html\r\n";
-    else
-        this->fullResponse += "Content-Type: " + getContentType(this->path) + "\r\n";
+		this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
+		this->fullResponse += "Location: " + req.getRedirectUri() + "\r\n";
+		this->fullResponse += "Content-Length: 0\r\n";
+		this->fullResponse += "Connection: close\r\n\r\n";
+		return;
+	}
+	else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
+	{
+		LOG_INFO();
+		std::cout << std::endl;
+		if (loc != NULL && loc->ctx.autoIndex == 1)
+		{
+		LOG_INFO();
+		std::cout << std::endl;
+			this->body = generateAutoIndex(this->path, req.getUri());
+		}
+	}
+	else
+	{
+		LOG_INFO();
+		std::cout << std::endl;
+		fileToString(response, req, this->path);
+		if (response.fileIsComplete)
+		{
+			LOG_INFO();
+			std::cout << std::endl;
+			this->body = contentOfFile; //try response.contentoffile
+			LOG_INFO();
+			std::cout << "content of file: "
+								<< contentOfFile
+								<< std::endl;
+			LOG_INFO();
+			std::cout << "response body: "
+								<< this->body
+								<< std::endl;
+		}
+		else if (this->body.empty() && this->codeStatus >= 400)
+		{
+			LOG_INFO();
+			std::cout << std::endl;
+			this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
+		}
+		else
+			return;
+	}
+	LOG_INFO();
+	this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(codeStatus) + "\r\n";
+	LOG_INFO();
+	if (this->codeStatus >= 400 || dirExists(this->path))
+	{
+		LOG_INFO();
+		this->fullResponse += "Content-Type: text/html\r\n";
+	}
+	else
+	{
+		LOG_INFO();
+		this->fullResponse += "Content-Type: " + getContentType(this->path) + "\r\n";
+	}
+	LOG_INFO();
 
-    // this->fullResponse += "Content-Type: " + getContentType(path) + "\r\n";
-    this->fullResponse += "Content-Length: " + intToString(this->body.size()) + "\r\n";
-    this->fullResponse += "Server: Webserv/1.0\r\n"; // ask
-    const std::map<std::string, std::string> &h = req.getHeaders();
-    std::map<std::string, std::string>::const_iterator it = h.find("Connection");
+	// this->fullResponse += "Content-Type: " + getContentType(path) + "\r\n";
+	this->fullResponse += "Content-Length: " + intToString(this->body.size()) + "\r\n";
+	this->fullResponse += "Server: Webserv/1.0\r\n"; // ask
+	const std::map<std::string, std::string> &h = req.getHeaders();
+	std::map<std::string, std::string>::const_iterator it = h.find("Connection");
 
-    if (it != h.end())
-    {
-        ConnectionValue = it->second;
-    }
-    else
-        ConnectionValue = "keep-alive";
-    this->fullResponse += "Connection: " + ConnectionValue + " \r\n";
-    this->fullResponse += "\r\n";
-    this->fullResponse += this->body;
-    std::cout << fullResponse << std::endl;
+	if (it != h.end())
+	{
+		ConnectionValue = it->second;
+	}
+	else
+		ConnectionValue = "keep-alive";
+	this->fullResponse += "Connection: " + ConnectionValue + " \r\n";
+	this->fullResponse += "\r\n";
+	this->fullResponse += this->body;
+	LOG_INFO();
+	std::cout << fullResponse << std::endl;
 }
 
 std::string HttpResponse::getPath() const

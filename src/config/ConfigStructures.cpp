@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/07 15:35:16 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/14 18:28:31 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -183,6 +183,11 @@ const ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader,
 // Fix this function to make it longest-prefix match instead of shortes-prefix match
 const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) const
 {
+	std::string cleanUri = uri; // razan
+	size_t queryPos = cleanUri.find('?'); // razan
+	if (queryPos != std::string::npos) // razan
+		cleanUri = cleanUri.substr(0, queryPos); // razan
+
 	const LocationConfig *bestMatch = NULL;
 	const LocationConfig *defaultMatch = NULL;
 	size_t bestLength = 0;
@@ -193,12 +198,10 @@ const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) co
 		const std::string& path = loc.path;
 		if (path == "/")
 				defaultMatch = &loc;
-		if (uri == path)
+		if (cleanUri == path) // razan 
 				return &loc;
-		if (uri.compare(0, path.length(), path) == 0 && path.length() > bestLength)
+		if (cleanUri.compare(0, path.length(), path) == 0 && path.length() > bestLength) // razan
 		{
-			if (uri.length() != path.length() && uri[path.length()] != '/')
-					continue;
 			bestLength = path.length();
 			bestMatch = &loc;
 		}
