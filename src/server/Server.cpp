@@ -13,6 +13,8 @@
 #include "Server.hpp"
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
+#include <sys/wait.h>
+
 
 Server::Server(const HttpConfig &config) : _config(config)
 {
@@ -20,6 +22,19 @@ Server::Server(const HttpConfig &config) : _config(config)
 	this->_clientSockets.clear();
 	fillListenSockets(_config);
 	initListenSockets();
+
+	// Debug: print configured servers and locations
+	for (size_t i = 0; i < _config.servers.size(); ++i) {
+		const ServerConfig &srv = _config.servers[i];
+		std::cout << "[Config] Server " << i << " has locations:" << std::endl;
+		for (size_t j = 0; j < srv.locations.size(); ++j) {
+			const LocationConfig &loc = srv.locations[j];
+			std::cout << "  path='" << loc.path << "' methods:";
+			for (size_t k = 0; k < loc.allowedMethods.size(); ++k)
+				std::cout << (k ? "," : "") << loc.allowedMethods[k];
+			std::cout << std::endl;
+		}
+	}
 
 	std::cout << "===========================\n";
 	std::cout << "\nServer started successfully!\n";
@@ -241,7 +256,7 @@ bool Server::requestIsComplete(const std::string &buffer)
 		size_t pos = header.find("Content-Length: ");
 		if (pos != std::string::npos)
 		{
-			unsigned long clientLen = strToUL(header.substr(pos + 15));
+			unsigned long clientLen = strToUL(header.substr(pos + 16));
 			return body.size() >= clientLen;
 		}
 		if (header.find("Transfer-Encoding: ") != std::string::npos)
@@ -316,12 +331,12 @@ void Server::readFromClient(Socket &client)
 		return;
 	}
 	client.lastActivity = std::time(NULL);
-	if (client.buffer.size() + bytesRead > 1048576)
-	{
-		std::cerr << "Server Error: Request too large from " << client.host << std::endl;
-		closeSocket(this->_clientSockets, client.fd);
-		return;
-	}
+	// if (client.buffer.size() + bytesRead > 1048576)
+	// {
+	// 	std::cerr << "Server Error: Request too large from " << client.host << std::endl;
+	// 	closeSocket(this->_clientSockets, client.fd);
+	// 	return;
+	// }
 	client.buffer.append(buffer, bytesRead);
 	if (requestIsComplete(client.buffer))
 	{
@@ -334,26 +349,25 @@ void Server::readFromClient(Socket &client)
 			localIp = ls->host;
 			localPort = ls->port;
 		}
-		HttpRequest request(_config, client.buffer, localIp, localPort);
+		client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
+		HttpRequest& request = *client.request;
 
-		if (request.getIsCgi())
-		{
-			if (!request.getCgi().isStdoutClosed())
-				addToPoll(request.getCgi().getStdoutFd(), POLLIN);
-
-			if (!request.getCgi().isStdinClosed() && request.getMethod() == "POST")
-				addToPoll(request.getCgi().getStdinFd(), POLLOUT);
-		}
-		client.request = NULL;
 		std::cout << "\n===== HttpRequest Info =====\n"
 				  << std::endl;
 		std::cout << request;
 		std::cout << "\n============================\n"
 				  << std::endl;
+		std::cout << "Processing request and building response..." << std::endl;
+		std::cout << "Cgi: " << (request.getIsCgi() ? "Yes" : "No") << std::endl;
 		if (request.getIsCgi())
+		{
+			// CGI script has been executed synchronously in executeCgi(), output is in cgiOutput
 			response.buildCgiResponse(request);
+		}
 		else
+		{
 			response.buildResponse(response, request);
+		}
 		std::cout << response;
 		client.responseString = response.getFullResponse();
 		changePollEvent(client.fd, POLLOUT);
@@ -407,25 +421,9 @@ void Server::handleClientSocket(size_t &index)
 	}
 	
 	
-	HttpRequest* req = client->request;
-
-	if (req && req->getIsCgi())
-	{
-		if (req->getCgi().getStdoutFd() == fd && this->_pollFds[index].revents & POLLIN)
-		{
-			req->getCgi().handleCgiOutput(*req);
-			if (req->getCgi().isStdoutClosed())
-                removePollFd(fd);
-			return ;
-		}
-		 if (req->getCgi().getStdinFd() == fd && (this->_pollFds[index].revents & POLLOUT))
-        {
-            req->getCgi().handleCgiBody(*req); 
-            if (req->getCgi().isStdinClosed())
-                removePollFd(fd);
-            return;
-        }
-	}
+	std::cout << "\n===== handleClientSocket =====\n"
+			  << std::endl;
+	// CGI handling is done synchronously in readFromClient/executeCgi, so skip poll-based handling
 	if (this->_pollFds[index].revents & POLLIN)
 	{
 		readFromClient(*client);

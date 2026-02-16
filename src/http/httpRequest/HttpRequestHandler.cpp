@@ -34,6 +34,8 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
 
 RequestStatus HttpRequestHandler::handleRequest()
 {
+	std::cout << "[DbgHandler] root='" << root << "' path='" << path << "' uploadEnabled=" << location->uploadEnabled << " uploadPath='" << location->uploadPath << "'" << std::endl;
+	std::cout << "[DbgHandler] dirExists(root)=" << dirExists(root) << " hasAccess(root,R_OK|X_OK)=" << hasAccess(root, R_OK | X_OK) << std::endl;
 	if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
 		return REQ_INTERNAL_SERVER_ERROR;
 	if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
@@ -61,7 +63,8 @@ bool HttpRequestHandler::isCgiRequest()
 	std::string ext = path.substr(dotPos + 1);
 	for (size_t i = 0; i < location->cgiExtensions.size(); i++)
 	{
-		if (ext == location->cgiExtensions[i])
+		std::string stored = location->cgiExtensions[i];
+		if (ext == stored || ("." + ext) == stored)
 			return true;
 	}
 	return false;
@@ -89,9 +92,9 @@ RequestStatus HttpRequestHandler::handleCgi()
 	LOG_INFO();
 	std::cout << "calling cgi"
 						<< std::endl;
+	isCgi = true;
 	req.getCgi().executeCgi(req);
 	//check error work on
-	req.setIsCgi(true);
 	
 	return REQ_OK;
 }
@@ -165,8 +168,8 @@ RequestStatus HttpRequestHandler::handleDelete(const std::string& path)
 {
     if (dirExists(path))
         return deleteDir(path);
-    // if (!hasAccess(path, W_OK))
-    //     return REQ_FORBIDDEN;
+    if (!hasAccess(path, W_OK))
+        return REQ_FORBIDDEN;
     if (remove(path.c_str()) != 0)
         return REQ_INTERNAL_SERVER_ERROR;
     return REQ_NO_CONTENT;
@@ -187,18 +190,28 @@ RequestStatus HttpRequestHandler::writeToFile(const std::string& body)
 
 RequestStatus HttpRequestHandler::handlePost()
 {
+
 	if (!location->uploadEnabled)
 		return REQ_METHOD_NOT_ALLOWED;
-	if (path.find(uploadPath) != 0)
+
+	std::string uploadDir = joinPath(root, uploadPath);
+	if (path.find(uploadDir) != 0)
 		return REQ_FORBIDDEN;
-	std::string fileName = path.substr(uploadPath.length());
-	if (isValidFileName(fileName))
-		return REQ_BAD_REQUEST;
-	if (!dirExists(joinPath(root, uploadPath)) || 
-		!hasAccess(joinPath(root, uploadPath), W_OK | X_OK))
-		return REQ_FORBIDDEN; 
+
+	std::string fileName = path.substr(uploadDir.length());
+	if (!fileName.empty() && fileName[0] == '/')
+		fileName = fileName.substr(1);
+	if (fileName.empty())
+		return REQ_BAD_REQUEST; 
+
+	if (!dirExists(uploadDir) || !hasAccess(uploadDir, W_OK | X_OK))
+		return REQ_FORBIDDEN;
+
+	path = joinPath(uploadDir, fileName);
+
 	if (fileExists(path) && !hasAccess(path, W_OK))
-		return REQ_CONFLICT; 
+		return REQ_CONFLICT;
+
 	return writeToFile(body);
 }
 

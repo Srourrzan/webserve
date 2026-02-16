@@ -131,7 +131,10 @@ void HttpResponse::fileToString(HttpResponse &response, HttpRequest &req, std::s
         return;
     }
     
-    response.fileIsComplete = true;
+    if (response.contentOfFile.empty())
+        response.fileIsComplete = false;
+    else
+        response.fileIsComplete = true;
     file.close();
     
     LOG_INFO();
@@ -240,42 +243,63 @@ std::string HttpResponse::generateAutoIndex(const std::string &path, const std::
 
 void HttpResponse::buildCgiResponse(HttpRequest &req)
 {
-    Cgi cgi;
-    cgi = req.getCgi();
+    Cgi& cgi = req.getCgi();
     std::string output = cgi.getCgiOutput();
+    
+    std::cout << "[DEBUG CGI] buildCgiResponse received output size: " << output.size() << " bytes" << std::endl;
+    if (output.size() > 0)
+    {
+        std::cout << "[DEBUG CGI] First 300 chars of output:\n" << output.substr(0, 300) << std::endl;
+    }
+    else
+    {
+        std::cout << "[DEBUG CGI] ERROR: cgiOutput is EMPTY!" << std::endl;
+    }
 
     size_t delimiter = output.find("\r\n\r\n");
+    size_t delimiter_len = 4;
     if (delimiter == std::string::npos)
     {
         delimiter = output.find("\n\n");
+        delimiter_len = 2;
     }
-    size_t statusPos = cgi.getCgiHeaders().find("Status: ");
+    
     if (delimiter != std::string::npos)
     {
-        cgi.setCgiHeaders(output.substr(0, delimiter));
-        cgi.setCgiBody(output.substr(delimiter + 4));
-        if (statusPos != std::string::npos)
-        {
-            std::string statusVal = cgi.getCgiHeaders().substr(statusPos + 8, 3);
-            this->setCodeStatus(std::atoi(statusVal.c_str()));
-        }
-        else
-        {
-            this->setCodeStatus(200);
-        }
-        cgi.setContentType ("text/html");
-        size_t typePos = cgi.getCgiHeaders().find("Content-Type:");
-        if (typePos != std::string::npos) {
-            size_t endLine = cgi.getCgiHeaders().find("\r\n", typePos);
-            cgi.setContentType(cgi.getCgiHeaders().substr(typePos + 13, endLine - (typePos + 13)));
-        }
-
-        this->fullResponse = "HTTP/1.1 200 OK\r\n"; 
+        std::string headers = output.substr(0, delimiter);
+        std::string body = output.substr(delimiter + delimiter_len);
         
+        cgi.setCgiHeaders(headers);
+        cgi.setCgiBody(body);
+        
+        // Extract Content-Type
+        std::string contentType = "text/html";
+        size_t typePos = headers.find("Content-Type:");
+        if (typePos != std::string::npos) {
+            size_t startVal = typePos + 13;
+            // Skip whitespace
+            while (startVal < headers.length() && (headers[startVal] == ' ' || headers[startVal] == '\t'))
+                startVal++;
+            // Find end of line (either \r\n or \n)
+            size_t endLine = headers.find('\n', startVal);
+            if (endLine == std::string::npos)
+                endLine = headers.length();
+            // Remove trailing \r if present
+            if (endLine > startVal && headers[endLine - 1] == '\r')
+                endLine--;
+            contentType = headers.substr(startVal, endLine - startVal);
+        }
+        cgi.setContentType(contentType);
+        
+        this->setCodeStatus(200);
+        
+        this->fullResponse = "HTTP/1.1 200 OK\r\n";
         this->fullResponse += "Content-Type: " + cgi.getContentType() + "\r\n";
         this->fullResponse += "Content-Length: " + intToString(cgi.getCgibody().size()) + "\r\n";
         this->fullResponse += "Server: Webserv/1.0\r\n";
-
+        this->fullResponse += "Connection: " + (req.getHeaders().count("Connection") ? req.getHeaders().at("Connection") : "keep-alive") + "\r\n";
+        this->fullResponse += "\r\n";
+        this->fullResponse += cgi.getCgibody();
     }
    
     

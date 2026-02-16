@@ -121,7 +121,9 @@ RequestStatus HttpRequestValidator::validateBody()
     if (status != REQ_OK)
         return status;
         
-    size_t maxSize = strToUL(req.getLocation()->ctx.clientMaxBodySize);
+    if (!location)
+        return REQ_NOT_FOUND;
+    size_t maxSize = strToUL(location->ctx.clientMaxBodySize);
     if (maxSize && body.size() > maxSize)
         return REQ_PAYLOAD_TOO_LARGE;
     return REQ_OK;

@@ -211,11 +211,6 @@ void Cgi::executeCgi(HttpRequest &req)
 		close(stdout_fds[1]);
 		std::string interpreter = "/usr/bin/python3";
 		std::string script = req.getFinalPath();
-		LOG_INFO();
-		std::cout << "script path "
-				  << script
-				  << std::endl;
-		LOG_INFO();
 		char *argv[] = {
 			const_cast<char *>(interpreter.c_str()),
 			const_cast<char *>(script.c_str()),
@@ -227,18 +222,16 @@ void Cgi::executeCgi(HttpRequest &req)
 
 	close(stdin_fds[0]);
 	close(stdout_fds[1]);
-	fcntl(stdin_fds[1], F_SETFL, O_NONBLOCK);
+	
+	// Close stdin immediately since we're not sending data to the CGI script
+	close(stdin_fds[1]);
+	
 	fcntl(stdout_fds[0], F_SETFL, O_NONBLOCK);
-	// write
-	// read
-
-	// add the fds to the polll
 	req.getCgi().pid = pid;
-	req.getCgi().stdinFd = stdin_fds[1];
+	req.getCgi().stdinFd = -1;
 	req.getCgi().stdoutFd = stdout_fds[0];
-	req.getCgi().stdinClosed = false;
+	req.getCgi().stdinClosed = true;
 	req.getCgi().stdoutClosed = false;
-	req.setIsCgi(true);
 
 	const int CGI_TIMEOUT = 5;
 	time_t start = time(NULL);
@@ -264,13 +257,57 @@ void Cgi::executeCgi(HttpRequest &req)
 		int exitCode = WEXITSTATUS(status);
 		if (exitCode != 0)
 		{
-			req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+			req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
 			return;
 		}
 	}
 	else
 	{
-		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR)); // 500
+		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
 		return;
+	}
+
+	// Read all remaining CGI output after child exits
+	if (req.getCgi().stdoutFd != -1)
+	{
+		int fd = req.getCgi().stdoutFd;
+		char buf[BUFFER_SIZE];
+		ssize_t n;
+		
+		// Remove O_NONBLOCK for final blocking read to ensure we get all data
+		fcntl(fd, F_SETFL, 0);
+		
+		while (true)
+		{
+			n = read(fd, buf, BUFFER_SIZE);
+			if (n > 0)
+			{
+				req.getCgi().cgiOutput.append(buf, n);
+			}
+			else if (n == 0)
+			{
+				// EOF reached
+				break;
+			}
+			else
+			{
+				// Error
+				if (errno != EAGAIN && errno != EWOULDBLOCK)
+				{
+					std::cerr << "CGI Read Error: " << strerror(errno) << std::endl;
+				}
+				break;
+			}
+		}
+		
+		close(fd);
+		req.getCgi().stdoutFd = -1;
+		req.getCgi().stdoutClosed = true;
+		
+		std::cout << "[DEBUG CGI] Script output size: " << req.getCgi().cgiOutput.size() << " bytes" << std::endl;
+		if (req.getCgi().cgiOutput.size() > 0)
+		{
+			std::cout << "[DEBUG CGI] First 200 chars: " << req.getCgi().cgiOutput.substr(0, 200) << std::endl;
+		}
 	}
 }

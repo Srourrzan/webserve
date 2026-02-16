@@ -11,6 +11,8 @@
 /* ************************************************************************** */
 
 #include "utils.hpp"
+#include <cstdlib>
+#include <cerrno>
 
 std::string intToString(int value) {
     std::stringstream ss;
@@ -20,10 +22,16 @@ std::string intToString(int value) {
 
 unsigned long strToUL(const std::string& str)
 {
-    std::istringstream iss(str);
-    unsigned long value = 0;
-    iss >> value;
-    return value;
+    std::string s = trim(str);
+    if (s.empty())
+        return 0;
+    const char* cstr = s.c_str();
+    char* endptr = NULL;
+    errno = 0;
+    unsigned long val = std::strtoul(cstr, &endptr, 10);
+    if (endptr == cstr)
+        return 0;
+    return val;
 }
 
 std::string trim(const std::string& line)

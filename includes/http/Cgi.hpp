@@ -12,7 +12,6 @@ private:
 	char **envp;
 	std::string cgiOutput;
 	size_t cgiBodySent;
-	pid_t pid;
 	int stdinFd;
 	int stdoutFd;
 	bool stdinClosed;
@@ -22,6 +21,7 @@ private:
 	std::string contentType;
 
 public:
+	pid_t pid;
 	void buildCgiEnv(HttpRequest &req);
 	void setCgi(const Cgi &c);
 	char **cgiMaptoChar(std::map<std::string, std::string> &map);

@@ -134,6 +134,14 @@ void HttpRequest::validateRequest()
 	status = validator.validate();
 	server = validator.getServer();
 	location = validator.getLocation();
+	if (location)
+	{
+		std::cout << "[Debug] Matched location path: " << location->path;
+		std::cout << "  allowed methods: ";
+		for (size_t i = 0; i < location->allowedMethods.size(); ++i)
+			std::cout << location->allowedMethods[i] << (i + 1 < location->allowedMethods.size() ? "," : "");
+		std::cout << std::endl;
+	}
 	body = validator.getBody();
 	if (status >= 300 && status < 400)
 	{
@@ -146,10 +154,14 @@ void HttpRequest::validateRequest()
 
 void HttpRequest::handleRequest()
 {
+		std::cout << "lhjdgklhjgdlkh" << std::endl;
+
 	HttpRequestHandler handler(*this);
 	status = handler.handleRequest();
 	finalPath = handler.getFinalPath();
 	isCgi = handler.isCgi;
+	std::cout << "\n\nis cgi: " << isCgi << std::endl;
+	std::cout << isCgi << std::endl;
 	if (status != REQ_OK)
 		handleErrorPageIfNeeded();
 }
