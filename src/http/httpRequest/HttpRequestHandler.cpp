@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/07 16:04:55 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/16 20:22:56 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,8 +18,17 @@
 
 
 
-HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
-    : req(r), finalPath("") , root(""), cgiBin(""), uploadPath(""), uri(""), path(""), body(""), location(NULL)
+HttpRequestHandler::HttpRequestHandler(HttpRequest& r): 
+	req(r), 
+	finalPath(""), 
+	root(""), 
+	cgiBin(""), 
+	uploadPath(""), 
+	uri(""), 
+	path(""), 
+	body(""), 
+	location(NULL), 
+	isCgi(false)
 {
 	body = req.getBody();
 	location = req.getLocation();

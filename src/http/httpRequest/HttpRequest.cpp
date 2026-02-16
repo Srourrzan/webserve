@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/07 16:04:30 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/16 20:12:19 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,8 @@ HttpRequest::HttpRequest(const HttpRequest &other)
 	  status(other.status),
 	  finalPath(other.finalPath),
 	  redirectUri(other.redirectUri),
-	  redirectCode(other.redirectCode)
+	  redirectCode(other.redirectCode),
+		isCgi(other.isCgi)
 // add cgi
 {
 }
@@ -154,14 +155,16 @@ void HttpRequest::validateRequest()
 
 void HttpRequest::handleRequest()
 {
-		std::cout << "lhjdgklhjgdlkh" << std::endl;
-
 	HttpRequestHandler handler(*this);
 	status = handler.handleRequest();
 	finalPath = handler.getFinalPath();
+	LOG_INFO();
+	std::cout << "What is the value of handler.isCgi?"
+						<< handler.isCgi
+						<< std::endl;
 	isCgi = handler.isCgi;
+	LOG_INFO();
 	std::cout << "\n\nis cgi: " << isCgi << std::endl;
-	std::cout << isCgi << std::endl;
 	if (status != REQ_OK)
 		handleErrorPageIfNeeded();
 }

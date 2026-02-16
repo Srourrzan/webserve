@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/14 18:27:39 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/16 19:57:27 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -331,18 +331,9 @@ void Server::readFromClient(Socket &client)
 		return;
 	}
 	client.lastActivity = std::time(NULL);
-	// if (client.buffer.size() + bytesRead > 1048576)
-	// {
-	// 	std::cerr << "Server Error: Request too large from " << client.host << std::endl;
-	// 	closeSocket(this->_clientSockets, client.fd);
-	// 	return;
-	// }
 	client.buffer.append(buffer, bytesRead);
 	if (requestIsComplete(client.buffer))
 	{
-		// std::cout << "\n========== Received Request ==========\n\n";
-		// std::cout << client.buffer;
-		// std::cout << "======================================\n";
 		Socket *ls = findSocket(this->_listenSockets, client.listenFd);
 		if (ls)
 		{

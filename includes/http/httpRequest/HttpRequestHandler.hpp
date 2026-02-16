@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/10 18:58:52 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/16 20:22:00 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,6 @@ class HttpRequestHandler
         const std::string& getFinalPath() const;
         void setErrorPagePath();
 
-        bool isCgi;
     private:
         HttpRequest& req;
         std::string finalPath; 
@@ -43,6 +42,7 @@ class HttpRequestHandler
         std::string path;
         std::string body;
         const LocationConfig *location;
+        bool isCgi;
 
         bool isCgiRequest();
         RequestStatus handleCgi();
