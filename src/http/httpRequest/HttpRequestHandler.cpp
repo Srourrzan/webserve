@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/16 20:22:56 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/17 19:59:36 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r):
 	path(""), 
 	body(""), 
 	location(NULL), 
-	isCgi(false)
+	_isCgi(false)
 {
 	body = req.getBody();
 	location = req.getLocation();
@@ -39,6 +39,14 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r):
 		cgiBin = location->ctx.cgiBinPath;
 		uploadPath = location->uploadPath;
 	}
+}
+
+HttpRequestHandler::~HttpRequestHandler()
+{}
+
+bool HttpRequestHandler::getIsCgi()
+{
+	return (this->_isCgi);
 }
 
 RequestStatus HttpRequestHandler::handleRequest()
@@ -93,18 +101,9 @@ RequestStatus HttpRequestHandler::handleCgi()
 		return REQ_FORBIDDEN;
 
 	finalPath = path;
-	LOG_INFO();
-	std::cout << "final path "
-						<< finalPath
-						<< std::endl;
 	req.setFinalPath(finalPath);
-	LOG_INFO();
-	std::cout << "calling cgi"
-						<< std::endl;
-	isCgi = true;
+	this->_isCgi = true;
 	req.getCgi().executeCgi(req);
-	//check error work on
-	
 	return REQ_OK;
 }
 
