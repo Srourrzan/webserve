@@ -10,7 +10,6 @@ class Cgi
 public:
 	Cgi();
 	~Cgi();
-	pid_t pid;
 	void buildCgiEnv(HttpRequest &req);
 	void setCgi(const Cgi &c);
 	char **cgiMaptoChar(std::map<std::string, std::string> &map);
@@ -33,6 +32,7 @@ public:
 	
 private:
 	std::map<std::string, std::string> cgiEnv;
+	pid_t pid;
 	char **envp;
 	std::string cgiOutput;
 	size_t cgiBodySent;

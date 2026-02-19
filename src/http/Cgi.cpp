@@ -4,8 +4,14 @@
 #include <sys/wait.h>
 #include <string>
 
-Cgi::Cgi() : envp(NULL), cgiBodySent(0), stdinFd(-1), stdoutFd(-1),
-			 stdinClosed(false), stdoutClosed(false), pid(-1)
+Cgi::Cgi(): 
+	pid(-1),
+	envp(NULL), 
+	cgiBodySent(0), 
+	stdinFd(-1), 
+	stdoutFd(-1),
+	stdinClosed(false), 
+	stdoutClosed(false)
 {
 }
 

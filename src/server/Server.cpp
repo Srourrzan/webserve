@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/19 23:15:36 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:51:11 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -324,177 +324,151 @@ void Server::handleListenSocket(size_t &index)
 
 bool Server::validateRequestLine(const std::string& line)
 {
-    std::istringstream iss(line);
-    std::string method, uri, version;
+	std::istringstream iss(line);
+	std::string method, uri, version;
 
-    if (!(iss >> method >> uri >> version))
-        return false;
-
-    if (method != "GET" && method != "POST" && method != "DELETE")
-        return false;
-
-    if (version != "HTTP/1.1")
-        return false;
-
-    if (uri.empty() || uri[0] != '/')
-        return false;
-
-    return true;
+	if (!(iss >> method >> uri >> version))
+		return false;
+	if (method != "GET" && method != "POST" && method != "DELETE")
+		return false;
+	if (version != "HTTP/1.1")
+		return false;
+	if (uri.empty() || uri[0] != '/')
+		return false;
+	return true;
 }
 
 bool Server::validateHeaders(const std::string& headers)
 {
-    std::istringstream stream(headers);
-    std::string line;
-    bool hasHost = false;
+	std::istringstream stream(headers);
+	std::string line;
+	bool hasHost = false;
 
-    while (std::getline(stream, line))
-    {
-        if (!line.empty() && line[line.size() - 1] == '\r')
-            line.erase(line.size() - 1);
-        
-        if (line.empty())
-            continue;
-
-        size_t colonPos = line.find(':');
-        if (colonPos == std::string::npos)
-            return false;
-
-        std::string key = line.substr(0, colonPos);
-        std::string value = line.substr(colonPos + 1);
-
-        while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
-            value.erase(0, 1);
-
-        if (key.empty())
-            return false;
-
-        if (key == "Host" || key == "host")
-            hasHost = true;
-
-        if (key == "Content-Length")
-        {
-            for (size_t i = 0; i < value.size(); i++)
-            {
-                if (!isdigit(value[i]) && value[i] != ' ' && value[i] != '\t')
-                    return false;
-            }
-        }
-    }
-
-    if (!hasHost)
-        return false;
-
-    return true;
+	while (std::getline(stream, line))
+	{
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
+		if (line.empty())
+			continue;
+		size_t colonPos = line.find(':');
+		if (colonPos == std::string::npos)
+			return false;
+		std::string key = line.substr(0, colonPos);
+		std::string value = line.substr(colonPos + 1);
+		while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
+			value.erase(0, 1);
+		if (key.empty())
+			return false;
+		if (key == "Host" || key == "host")
+			hasHost = true;
+		if (key == "Content-Length")
+		{
+			for (size_t i = 0; i < value.size(); i++)
+			{
+				if (!isdigit(value[i]) && value[i] != ' ' && value[i] != '\t')
+					return false;
+			}
+		}
+	}
+	if (!hasHost)
+		return false;
+	return true;
 }
 
 bool Server::isMalformedRequest(const std::string& buffer)
 {
-    size_t headerEnd = buffer.find("\r\n\r\n");
-    std::string lineSep = "\r\n";
-    
-    if (headerEnd == std::string::npos)
-    {
-        headerEnd = buffer.find("\n\n");
-        lineSep = "\n";
-        if (headerEnd == std::string::npos)
-            return false;
-    }
-
-    std::string headerPart = buffer.substr(0, headerEnd);
-
-    size_t firstLineEnd = headerPart.find(lineSep);
-    if (firstLineEnd == std::string::npos)
-        return true;
-
-    std::string requestLine = headerPart.substr(0, firstLineEnd);
-    std::string headers = headerPart.substr(firstLineEnd + lineSep.length());
-
-    if (!validateRequestLine(requestLine))
-        return true;
-
-    if (!validateHeaders(headers))
-        return true;
-
-    return false;
+	std::string headers;
+	std::string requestLine;
+	std::string lineSep = "\r\n";
+	size_t headerEnd = buffer.find("\r\n\r\n");
+	
+	if (headerEnd == std::string::npos)
+	{
+		headerEnd = buffer.find("\n\n");
+		lineSep = "\n";
+		if (headerEnd == std::string::npos)
+			return false;
+	}
+	std::string headerPart = buffer.substr(0, headerEnd);
+	size_t firstLineEnd = headerPart.find(lineSep);
+	if (firstLineEnd == std::string::npos)
+		return true;
+	requestLine = headerPart.substr(0, firstLineEnd);
+	headers = headerPart.substr(firstLineEnd + lineSep.length());
+	if (!validateRequestLine(requestLine))
+		return true;
+	if (!validateHeaders(headers))
+		return true;
+	return false;
 }
 
 void Server::build400AndClose(Socket &client)
 {
-    std::ostringstream ss;
-    std::string body = "<html><body><h1>400 Bad Request</h1></body></html>";
+	std::ostringstream ss;
+	std::string body = "<html><body><h1>400 Bad Request</h1></body></html>";
 
-    ss << "HTTP/1.1 400 Bad Request\r\n";
-    ss << "Content-Length: " << body.size() << "\r\n";
-    ss << "Content-Type: text/html\r\n";
-    ss << "Connection: close\r\n";
-    ss << "\r\n";
-    ss << body;
+	ss << "HTTP/1.1 400 Bad Request\r\n";
+	ss << "Content-Length: " << body.size() << "\r\n";
+	ss << "Content-Type: text/html\r\n";
+	ss << "Connection: close\r\n";
+	ss << "\r\n";
+	ss << body;
 
-    client.responseString = ss.str();
-    client.totalSent = 0;
-    client.buffer.clear();
+	client.responseString = ss.str();
+	client.totalSent = 0;
+	client.buffer.clear();
 	client.closeAfterResponse = true;
-    changePollEvent(client.fd, POLLOUT);
+	changePollEvent(client.fd, POLLOUT);
 }
 
 
 void Server::readFromClient(Socket &client)
 {
-    char buffer[BUFFER_SIZE];
-    std::memset(buffer, 0, BUFFER_SIZE);
-    ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);
+	int localPort = 0;
+	std::string localIp;
+	HttpResponse response;
+	char buffer[BUFFER_SIZE];
+	std::memset(buffer, 0, BUFFER_SIZE);
+	ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);
 
-    if (bytesRead <= 0)
-    {
-        closeSocket(this->_clientSockets, client.fd);
-        return;
-    }
+	if (bytesRead <= 0)
+	{
+		closeSocket(this->_clientSockets, client.fd);
+		return;
+	}
+	client.lastActivity = std::time(NULL);
+	client.buffer.append(buffer, bytesRead);
+	if (isMalformedRequest(client.buffer))
+	{
+		build400AndClose(client);
+		return;
+	}
+	if (!requestIsComplete(client.buffer))
+		return;
 
-    client.lastActivity = std::time(NULL);
-    client.buffer.append(buffer, bytesRead);
-
-    if (isMalformedRequest(client.buffer))
-    {
-        build400AndClose(client);
-        return;
-    }
-
-    if (!requestIsComplete(client.buffer))
-        return;
-
-    HttpResponse response;
-    std::string localIp;
-    int localPort = 0;
-
-    Socket *ls = findSocket(this->_listenSockets, client.listenFd);
-    if (ls)
-    {
-        localIp = ls->host;
-        localPort = ls->port;
-    }
-
-    client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
-    HttpRequest& request = *client.request;
-
-    if (request.getIsCgi())
-        response.buildCgiResponse(request);
-    else
-        response.buildResponse(response, request);
-
-    client.responseString = response.getFullResponse();
-    client.totalSent = 0;
+	Socket *ls = findSocket(this->_listenSockets, client.listenFd);
+	if (ls)
+	{
+		localIp = ls->host;
+		localPort = ls->port;
+	}
+	client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
+	HttpRequest& request = *client.request;
+	if (request.getIsCgi())
+		response.buildCgiResponse(request);
+	else
+		response.buildResponse(response, request);
+	client.responseString = response.getFullResponse();
+	client.totalSent = 0;
 	client.closeAfterResponse = false;
-	
 	if (request.getHeaders().count("Connection"))
 	{
 		std::string conn = request.getHeaders().at("Connection");
 		if (conn == "close")
 			client.closeAfterResponse = true;
 	}
-
-    changePollEvent(client.fd, POLLOUT);
-	~HttpRequest()
+	changePollEvent(client.fd, POLLOUT);
+	delete(client.request);
 }
 
 
