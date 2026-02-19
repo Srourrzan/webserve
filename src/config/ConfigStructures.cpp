@@ -180,13 +180,12 @@ const ServerConfig* HttpConfig::findServerByHost(const std::string& hostHeader,
     return NULL;
 }
 
-// Fix this function to make it longest-prefix match instead of shortes-prefix match
-const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) const
+const LocationConfig *ServerConfig::findLocationByUri(const std::string &uri) const
 {
-	std::string cleanUri = uri; // razan
-	size_t queryPos = cleanUri.find('?'); // razan
-	if (queryPos != std::string::npos) // razan
-		cleanUri = cleanUri.substr(0, queryPos); // razan
+	std::string cleanUri = uri;
+	size_t queryPos = cleanUri.find('?');
+	if (queryPos != std::string::npos)
+		cleanUri = cleanUri.substr(0, queryPos);
 
 	const LocationConfig *bestMatch = NULL;
 	const LocationConfig *defaultMatch = NULL;
@@ -198,9 +197,9 @@ const LocationConfig* ServerConfig::findLocationByUri(const std::string& uri) co
 		const std::string& path = loc.path;
 		if (path == "/")
 				defaultMatch = &loc;
-		if (cleanUri == path) // razan 
+		if (cleanUri == path)
 				return &loc;
-		if (cleanUri.compare(0, path.length(), path) == 0 && path.length() > bestLength) // razan
+		if (cleanUri.compare(0, path.length(), path) == 0 && path.length() > bestLength)
 		{
 			bestLength = path.length();
 			bestMatch = &loc;

@@ -3,9 +3,24 @@
 #include "RequestStatus.hpp"
 #include <sys/wait.h>
 #include <string>
-// HTTP_USER_AGENT	The user agent string of the client's browser,
-// which can be used for browser-specific logic.
-// SERVER_NAME	The server's hostname or IP address.
+
+Cgi::Cgi() : envp(NULL), cgiBodySent(0), stdinFd(-1), stdoutFd(-1),
+			 stdinClosed(false), stdoutClosed(false), pid(-1)
+{
+}
+
+Cgi::~Cgi()
+{
+	if (envp != NULL)
+	{
+		for (size_t i = 0; envp[i] != NULL; i++)
+		{
+			delete[] envp[i];
+		}
+		delete[] envp;
+		envp = NULL;
+	}
+}
 
 bool Cgi::isStdinClosed() const { return stdinClosed; }
 
@@ -83,7 +98,7 @@ void Cgi::handleCgiBody(HttpRequest &request)
 		cgi.stdinFd = -1;
 		cgi.stdinClosed = true;
 	}
-	std::cout << cgi.cgiBodySent;
+
 }
 
 void Cgi::handleCgiOutput(HttpRequest &request)
@@ -120,25 +135,26 @@ void Cgi::handleCgiOutput(HttpRequest &request)
 		cgi.cgiOutput.append(buf, bytes);
 	}
 }
+
 void Cgi::buildCgiEnv(HttpRequest &request)
 {
 	cgiEnv.clear();
 	cgiEnv["GATEWAY_INTERFACE"] = "CGI/1.1";
 	cgiEnv["SERVER_SOFTWARE"] = "webserv/1.0";
-	cgiEnv["REQUEST_METHOD"] = request.getMethod(); //
+	cgiEnv["REQUEST_METHOD"] = request.getMethod();
 	cgiEnv["SERVER_PROTOCOL"] = request.getHttpVersion();
-	cgiEnv["SCRIPT_NAME"] = request.getUri(); //
+	cgiEnv["SCRIPT_NAME"] = request.getUri();
 	cgiEnv["SCRIPT_FILENAME"] = request.getFinalPath();
 	std::string uri = request.getUri();
 	size_t q = uri.find('?');
-	cgiEnv["QUERY_STRING"] = (q != std::string::npos) ? uri.substr(q + 1) : ""; //
-	cgiEnv["PATH_INFO"] = (q != std::string::npos) ? uri.substr(0, q) : uri;	//
+	cgiEnv["QUERY_STRING"] = (q != std::string::npos) ? uri.substr(q + 1) : "";
+	cgiEnv["PATH_INFO"] = (q != std::string::npos) ? uri.substr(0, q) : uri;
 	if (request.getHeaders().count("Content-Length"))
 		cgiEnv["CONTENT_LENGTH"] = request.getHeaders().at("Content-Length");
 	if (request.getHeaders().count("Content-Type"))
 		cgiEnv["CONTENT_TYPE"] = request.getHeaders().at("Content-Type");
 	cgiEnv["SERVER_PORT"] = intToString(request.getLocalPort());
-	cgiEnv["REMOTE_ADDR"] = request.getLocalIp(); //
+	cgiEnv["REMOTE_ADDR"] = request.getLocalIp();
 	cgiEnv["REQUEST_URI"] = uri;
 	cgiEnv["DOCUMENT_ROOT"] = request.getLocation() ? request.getLocation()->ctx.root : "";
 }
@@ -248,7 +264,6 @@ void Cgi::executeCgi(HttpRequest &req)
 			req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT));
 			return;
 		}
-
 		usleep(10000);
 	}
 
@@ -266,17 +281,14 @@ void Cgi::executeCgi(HttpRequest &req)
 		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
 		return;
 	}
-
 	// Read all remaining CGI output after child exits
 	if (req.getCgi().stdoutFd != -1)
 	{
 		int fd = req.getCgi().stdoutFd;
 		char buf[BUFFER_SIZE];
 		ssize_t n;
-		
 		// Remove O_NONBLOCK for final blocking read to ensure we get all data
 		fcntl(fd, F_SETFL, 0);
-		
 		while (true)
 		{
 			n = read(fd, buf, BUFFER_SIZE);
@@ -299,15 +311,8 @@ void Cgi::executeCgi(HttpRequest &req)
 				break;
 			}
 		}
-		
 		close(fd);
 		req.getCgi().stdoutFd = -1;
 		req.getCgi().stdoutClosed = true;
-		
-		std::cout << "[DEBUG CGI] Script output size: " << req.getCgi().cgiOutput.size() << " bytes" << std::endl;
-		if (req.getCgi().cgiOutput.size() > 0)
-		{
-			std::cout << "[DEBUG CGI] First 200 chars: " << req.getCgi().cgiOutput.substr(0, 200) << std::endl;
-		}
 	}
 }

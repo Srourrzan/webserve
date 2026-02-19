@@ -7,20 +7,9 @@
 class HttpRequest;
 class Cgi
 {
-private:
-	std::map<std::string, std::string> cgiEnv;
-	char **envp;
-	std::string cgiOutput;
-	size_t cgiBodySent;
-	int stdinFd;
-	int stdoutFd;
-	bool stdinClosed;
-	bool stdoutClosed;
-	std::string cgiHeaders;
-	std::string cgiBody;
-	std::string contentType;
-
 public:
+	Cgi();
+	~Cgi();
 	pid_t pid;
 	void buildCgiEnv(HttpRequest &req);
 	void setCgi(const Cgi &c);
@@ -41,6 +30,20 @@ public:
 	std::string getCgibody() const;
 	void setContentType(std::string input);
 	std::string getContentType();
+	
+private:
+	std::map<std::string, std::string> cgiEnv;
+	char **envp;
+	std::string cgiOutput;
+	size_t cgiBodySent;
+	int stdinFd;
+	int stdoutFd;
+	bool stdinClosed;
+	bool stdoutClosed;
+	std::string cgiHeaders;
+	std::string cgiBody;
+	std::string contentType;
+
 };
 
 #endif

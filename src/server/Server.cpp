@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/16 19:57:27 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:15:36 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,19 +22,6 @@ Server::Server(const HttpConfig &config) : _config(config)
 	this->_clientSockets.clear();
 	fillListenSockets(_config);
 	initListenSockets();
-
-	// Debug: print configured servers and locations
-	for (size_t i = 0; i < _config.servers.size(); ++i) {
-		const ServerConfig &srv = _config.servers[i];
-		std::cout << "[Config] Server " << i << " has locations:" << std::endl;
-		for (size_t j = 0; j < srv.locations.size(); ++j) {
-			const LocationConfig &loc = srv.locations[j];
-			std::cout << "  path='" << loc.path << "' methods:";
-			for (size_t k = 0; k < loc.allowedMethods.size(); ++k)
-				std::cout << (k ? "," : "") << loc.allowedMethods[k];
-			std::cout << std::endl;
-		}
-	}
 
 	std::cout << "===========================\n";
 	std::cout << "\nServer started successfully!\n";
@@ -52,6 +39,11 @@ void Server::closeAllSockets(std::vector<Socket> &sockets)
 {
 	for (size_t i = 0; i < sockets.size(); i++)
 	{
+		if (sockets[i].request != NULL)
+		{
+			delete sockets[i].request;
+			sockets[i].request = NULL;
+		}
 		if (sockets[i].fd != -1)
 			close(sockets[i].fd);
 	}
@@ -72,6 +64,11 @@ void Server::closeSocket(std::vector<Socket> &sockets, int fd)
 	{
 		if (sockets[i].fd == fd)
 		{
+			if (sockets[i].request != NULL)
+			{
+				delete sockets[i].request;
+				sockets[i].request = NULL;
+			}
 			close(fd);
 			sockets.erase(sockets.begin() + i);
 			return;
@@ -213,7 +210,8 @@ void Server::addClientSocket(int clientFd, int listenFd)
 	cl.lastActivity = std::time(NULL);
 	cl.totalSent = 0;
 	cl.buffer.clear();
-	cl.request = NULL; //Razan
+	cl.request = NULL;
+	cl.closeAfterResponse = false;
 	this->_clientSockets.push_back(cl);
 }
 
@@ -244,10 +242,18 @@ Socket *Server::findSocket(std::vector<Socket> &sockets, int fd)
 bool Server::requestIsComplete(const std::string &buffer)
 {
 	size_t headerEnd = buffer.find("\r\n\r\n");
+	size_t bodyStart = 4;
+	
 	if (headerEnd == std::string::npos)
-		return false;
+	{
+		headerEnd = buffer.find("\n\n");
+		bodyStart = 2;
+		if (headerEnd == std::string::npos)
+			return false;
+	}
+	
 	std::string header = buffer.substr(0, headerEnd);
-	std::string body = buffer.substr(headerEnd + 4);
+	std::string body = buffer.substr(headerEnd + bodyStart);
 
 	if (header.find("GET ") == 0 || header.find("DELETE ") == 0)
 		return true;
@@ -316,81 +322,204 @@ void Server::handleListenSocket(size_t &index)
 		acceptClient(this->_pollFds[index].fd);
 }
 
+bool Server::validateRequestLine(const std::string& line)
+{
+    std::istringstream iss(line);
+    std::string method, uri, version;
+
+    if (!(iss >> method >> uri >> version))
+        return false;
+
+    if (method != "GET" && method != "POST" && method != "DELETE")
+        return false;
+
+    if (version != "HTTP/1.1")
+        return false;
+
+    if (uri.empty() || uri[0] != '/')
+        return false;
+
+    return true;
+}
+
+bool Server::validateHeaders(const std::string& headers)
+{
+    std::istringstream stream(headers);
+    std::string line;
+    bool hasHost = false;
+
+    while (std::getline(stream, line))
+    {
+        if (!line.empty() && line[line.size() - 1] == '\r')
+            line.erase(line.size() - 1);
+        
+        if (line.empty())
+            continue;
+
+        size_t colonPos = line.find(':');
+        if (colonPos == std::string::npos)
+            return false;
+
+        std::string key = line.substr(0, colonPos);
+        std::string value = line.substr(colonPos + 1);
+
+        while (!value.empty() && (value[0] == ' ' || value[0] == '\t'))
+            value.erase(0, 1);
+
+        if (key.empty())
+            return false;
+
+        if (key == "Host" || key == "host")
+            hasHost = true;
+
+        if (key == "Content-Length")
+        {
+            for (size_t i = 0; i < value.size(); i++)
+            {
+                if (!isdigit(value[i]) && value[i] != ' ' && value[i] != '\t')
+                    return false;
+            }
+        }
+    }
+
+    if (!hasHost)
+        return false;
+
+    return true;
+}
+
+bool Server::isMalformedRequest(const std::string& buffer)
+{
+    size_t headerEnd = buffer.find("\r\n\r\n");
+    std::string lineSep = "\r\n";
+    
+    if (headerEnd == std::string::npos)
+    {
+        headerEnd = buffer.find("\n\n");
+        lineSep = "\n";
+        if (headerEnd == std::string::npos)
+            return false;
+    }
+
+    std::string headerPart = buffer.substr(0, headerEnd);
+
+    size_t firstLineEnd = headerPart.find(lineSep);
+    if (firstLineEnd == std::string::npos)
+        return true;
+
+    std::string requestLine = headerPart.substr(0, firstLineEnd);
+    std::string headers = headerPart.substr(firstLineEnd + lineSep.length());
+
+    if (!validateRequestLine(requestLine))
+        return true;
+
+    if (!validateHeaders(headers))
+        return true;
+
+    return false;
+}
+
+void Server::build400AndClose(Socket &client)
+{
+    std::ostringstream ss;
+    std::string body = "<html><body><h1>400 Bad Request</h1></body></html>";
+
+    ss << "HTTP/1.1 400 Bad Request\r\n";
+    ss << "Content-Length: " << body.size() << "\r\n";
+    ss << "Content-Type: text/html\r\n";
+    ss << "Connection: close\r\n";
+    ss << "\r\n";
+    ss << body;
+
+    client.responseString = ss.str();
+    client.totalSent = 0;
+    client.buffer.clear();
+	client.closeAfterResponse = true;
+    changePollEvent(client.fd, POLLOUT);
+}
+
+
 void Server::readFromClient(Socket &client)
 {
-	HttpResponse response;
-	std::string localIp;
-	int localPort = 0;
-	char buffer[BUFFER_SIZE];
-	std::memset(buffer, 0, BUFFER_SIZE);
-	ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);
+    char buffer[BUFFER_SIZE];
+    std::memset(buffer, 0, BUFFER_SIZE);
+    ssize_t bytesRead = recv(client.fd, buffer, BUFFER_SIZE - 1, 0);
 
-	if (bytesRead <= 0)
-	{
-		closeSocket(this->_clientSockets, client.fd);
-		return;
-	}
-	client.lastActivity = std::time(NULL);
-	client.buffer.append(buffer, bytesRead);
-	if (requestIsComplete(client.buffer))
-	{
-		Socket *ls = findSocket(this->_listenSockets, client.listenFd);
-		if (ls)
-		{
-			localIp = ls->host;
-			localPort = ls->port;
-		}
-		client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
-		HttpRequest& request = *client.request;
+    if (bytesRead <= 0)
+    {
+        closeSocket(this->_clientSockets, client.fd);
+        return;
+    }
 
-		std::cout << "\n===== HttpRequest Info =====\n"
-				  << std::endl;
-		std::cout << request;
-		std::cout << "\n============================\n"
-				  << std::endl;
-		std::cout << "Processing request and building response..." << std::endl;
-		std::cout << "Cgi: " << (request.getIsCgi() ? "Yes" : "No") << std::endl;
-		if (request.getIsCgi())
-		{
-			// CGI script has been executed synchronously in executeCgi(), output is in cgiOutput
-			response.buildCgiResponse(request);
-		}
-		else
-		{
-			response.buildResponse(response, request);
-		}
-		std::cout << response;
-		client.responseString = response.getFullResponse();
-		changePollEvent(client.fd, POLLOUT);
+    client.lastActivity = std::time(NULL);
+    client.buffer.append(buffer, bytesRead);
+
+    if (isMalformedRequest(client.buffer))
+    {
+        build400AndClose(client);
+        return;
+    }
+
+    if (!requestIsComplete(client.buffer))
+        return;
+
+    HttpResponse response;
+    std::string localIp;
+    int localPort = 0;
+
+    Socket *ls = findSocket(this->_listenSockets, client.listenFd);
+    if (ls)
+    {
+        localIp = ls->host;
+        localPort = ls->port;
+    }
+
+    client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
+    HttpRequest& request = *client.request;
+
+    if (request.getIsCgi())
+        response.buildCgiResponse(request);
+    else
+        response.buildResponse(response, request);
+
+    client.responseString = response.getFullResponse();
+    client.totalSent = 0;
+	client.closeAfterResponse = false;
+	
+	if (request.getHeaders().count("Connection"))
+	{
+		std::string conn = request.getHeaders().at("Connection");
+		if (conn == "close")
+			client.closeAfterResponse = true;
 	}
+
+    changePollEvent(client.fd, POLLOUT);
+	~HttpRequest()
 }
+
 
 void Server::writeToClient(Socket &client)
 {
-
-	// std::cout << "Writing response to client fd: " << client.fd << std::endl;
 	std::string &response = client.responseString;
-	// std::cout << "Response size: " << response.size() << ", Already sent: " << client.totalSent << std::endl;
-	// std::cout << "Attempting to send " << (response.size() - client.totalSent) << " bytes..." << std::endl;
 	ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
-	// std::cout << "send() returned: " << sent << std::endl;
 	if (sent <= 0)
 	{
 		std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
 		closeSocket(this->_clientSockets, client.fd);
 		return;
 	}
-	// std::cout << "Sent " << sent << " bytes to client" << std::endl;
 	client.lastActivity = std::time(NULL);
 	client.totalSent += sent;
 	if (client.totalSent >= response.size())
 	{
-		// std::cout << "Response complete, switching back to POLLIN" << std::endl;
 		client.totalSent = 0;
 		client.buffer.clear();
 		changePollEvent(client.fd, POLLIN);
-		// if (request.getHeaders().count("Connection") && request.getHeaders().at("Connection") == "close")
-		//         closeSocket(clientSockets, client.fd);
+		if (client.closeAfterResponse)		
+		{
+			closeSocket(this->_clientSockets, client.fd);
+			return;
+		}
 	}
 }
 
@@ -411,10 +540,6 @@ void Server::handleClientSocket(size_t &index)
 		return;
 	}
 	
-	
-	std::cout << "\n===== handleClientSocket =====\n"
-			  << std::endl;
-	// CGI handling is done synchronously in readFromClient/executeCgi, so skip poll-based handling
 	if (this->_pollFds[index].revents & POLLIN)
 	{
 		readFromClient(*client);
@@ -443,8 +568,6 @@ void Server::checkClientTimeouts()
 
 void Server::run()
 {
-//inside server map fd - req
-//add fd 
 	initPollFds();
 	while (true)
 	{

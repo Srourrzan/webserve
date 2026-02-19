@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/17 19:59:21 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 22:47:56 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,7 +112,6 @@ void HttpRequest::processRawRequest()
 		return;
 
 	handleRequest();
-	// state = READING;
 	return;
 }
 
@@ -135,14 +134,6 @@ void HttpRequest::validateRequest()
 	status = validator.validate();
 	server = validator.getServer();
 	location = validator.getLocation();
-	if (location)
-	{
-		std::cout << "[Debug] Matched location path: " << location->path;
-		std::cout << "  allowed methods: ";
-		for (size_t i = 0; i < location->allowedMethods.size(); ++i)
-			std::cout << location->allowedMethods[i] << (i + 1 < location->allowedMethods.size() ? "," : "");
-		std::cout << std::endl;
-	}
 	body = validator.getBody();
 	if (status >= 300 && status < 400)
 	{

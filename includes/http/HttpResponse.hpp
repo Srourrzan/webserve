@@ -5,11 +5,11 @@
 class HttpResponse
 {
 private:
-	std::string fullResponse; // used
-	std::string path;		  // used
+	std::string fullResponse;
+	std::string path;
 	std::string header;
 	std::string body;
-	int codeStatus; // used
+	int codeStatus;
 	std::string buildTree(const std::string &path, const std::string &uri);
 	std::string contentOfFile;
 	bool fileIsComplete;

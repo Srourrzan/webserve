@@ -10,8 +10,8 @@
 
 HttpResponse::HttpResponse()
 {
-    fullResponse = ""; // used
-    path = "";         // used
+    fullResponse = "";
+    path = "";
     header = "";
     body = "";
     contentOfFile = "";
@@ -63,47 +63,11 @@ std::string HttpResponse::getStatusMsg(int code)
     }
 }
 
-// void HttpResponse::fileToString(HttpResponse &response, HttpRequest &req, std::string path)
-// {
-// 	std::ifstream file(path.c_str(), std::ios::binary);
-// 	if (!file.is_open())
-// 	{
-// 		LOG_ERR();
-// 		std::cerr << "Error : Can not open the file" << std::endl; // ask
-// 		req.setStatus(REQ_NOT_FOUND);
-// 		return;
-// 	}
-// 	char buf[BUFFER_SIZE];
-// 	file.read(buf, BUFFER_SIZE);
-// 	std::streamsize bytesRead = file.gcount();
-// 	if (file.peek() == std::char_traits<char>::eof())
-// 	{
-// 		response.fileIsComplete = true;
-// 		response.contentOfFile = "";
-// 		file.close();
-// 		LOG_INFO();
-// 		std::cout << "file is complete and content of file is empty string"
-// 							<< std::endl;
-// 		return;
-// 	}
-// 	if (bytesRead > 0)
-// 	{
-// 		response.contentOfFile.append(buf, bytesRead);
-// 	}
-// 	if (file.eof())
-// 	{
-// 		response.fileIsComplete = true;
-// 		file.close();
-// 	}
-// }
-
-// RAZAN
 void HttpResponse::fileToString(HttpResponse &response, HttpRequest &req, std::string path)
 {
     std::ifstream file(path.c_str(), std::ios::binary);
     if (!file.is_open())
     {
-        LOG_ERR();
         std::cerr << "Error: Cannot open file " << path << std::endl;
         req.setStatus(REQ_NOT_FOUND);
         return;
@@ -174,19 +138,13 @@ std::string HttpResponse::getContentType(std::string path)
     else if (type == "json")
         return "application/json";
 
-    return "text/plain"; // check
+    return "text/plain";
 }
 
 std::string HttpResponse::getFullResponse() const
 {
     return this->fullResponse;
 }
-
-// std::string intToString( int value) {
-//     std::stringstream ss;
-//     ss << value;
-//     return ss.str();
-// }
 
 std::string HttpResponse::buildTree(const std::string &path, const std::string &uri)
 {
@@ -242,16 +200,6 @@ void HttpResponse::buildCgiResponse(HttpRequest &req)
 {
     Cgi& cgi = req.getCgi();
     std::string output = cgi.getCgiOutput();
-    
-    std::cout << "[DEBUG CGI] buildCgiResponse received output size: " << output.size() << " bytes" << std::endl;
-    if (output.size() > 0)
-    {
-        std::cout << "[DEBUG CGI] First 300 chars of output:\n" << output.substr(0, 300) << std::endl;
-    }
-    else
-    {
-        std::cout << "[DEBUG CGI] ERROR: cgiOutput is EMPTY!" << std::endl;
-    }
 
     size_t delimiter = output.find("\r\n\r\n");
     size_t delimiter_len = 4;
@@ -271,14 +219,11 @@ void HttpResponse::buildCgiResponse(HttpRequest &req)
         size_t typePos = headers.find("Content-Type:");
         if (typePos != std::string::npos) {
             size_t startVal = typePos + 13;
-            // Skip whitespace
             while (startVal < headers.length() && (headers[startVal] == ' ' || headers[startVal] == '\t'))
                 startVal++;
-            // Find end of line (either \r\n or \n)
             size_t endLine = headers.find('\n', startVal);
             if (endLine == std::string::npos)
                 endLine = headers.length();
-            // Remove trailing \r if present
             if (endLine > startVal && headers[endLine - 1] == '\r')
                 endLine--;
             contentType = headers.substr(startVal, endLine - startVal);
@@ -304,6 +249,7 @@ void HttpResponse::buildResponse(HttpResponse &response, HttpRequest &req)
 	const LocationConfig *loc = req.getLocation();
 	if (req.getRedirectCode() != 0)
 	{
+
 		this->fullResponse = "HTTP/1.1 " + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "\r\n";
 		this->fullResponse += "Location: " + req.getRedirectUri() + "\r\n";
 		this->fullResponse += "Content-Length: 0\r\n";
@@ -312,38 +258,20 @@ void HttpResponse::buildResponse(HttpResponse &response, HttpRequest &req)
 	}
 	else if (this->codeStatus == REQ_OK && dirExists(physicalPath))
 	{
-		LOG_INFO();
-		std::cout << std::endl;
 		if (loc != NULL && loc->ctx.autoIndex == 1)
 		{
-		LOG_INFO();
-		std::cout << std::endl;
 			this->body = generateAutoIndex(this->path, req.getUri());
 		}
 	}
 	else
 	{
-		LOG_INFO();
-		std::cout << std::endl;
 		fileToString(response, req, this->path);
 		if (response.fileIsComplete)
 		{
-			LOG_INFO();
-			std::cout << std::endl;
-			this->body = contentOfFile; //try response.contentoffile
-			LOG_INFO();
-			std::cout << "content of file: "
-								<< contentOfFile
-								<< std::endl;
-			LOG_INFO();
-			std::cout << "response body: "
-								<< this->body
-								<< std::endl;
+			this->body = contentOfFile;
 		}
 		else if (this->body.empty() && this->codeStatus >= 400)
 		{
-			LOG_INFO();
-			std::cout << std::endl;
 			this->body = "<html><body><h1>" + intToString(this->codeStatus) + " " + getStatusMsg(this->codeStatus) + "</h1></body></html>";
 		}
 		else
@@ -353,9 +281,12 @@ void HttpResponse::buildResponse(HttpResponse &response, HttpRequest &req)
 	if (this->codeStatus >= 400 || dirExists(this->path))
 		this->fullResponse += "Content-Type: text/html\r\n";
 	else
+	{
 		this->fullResponse += "Content-Type: " + getContentType(this->path) + "\r\n";
+	}
+
 	this->fullResponse += "Content-Length: " + intToString(this->body.size()) + "\r\n";
-	this->fullResponse += "Server: Webserv/1.0\r\n"; // ask
+	this->fullResponse += "Server: Webserv/1.0\r\n";
 	const std::map<std::string, std::string> &h = req.getHeaders();
 	std::map<std::string, std::string>::const_iterator it = h.find("Connection");
 	if (it != h.end())
@@ -365,8 +296,7 @@ void HttpResponse::buildResponse(HttpResponse &response, HttpRequest &req)
 	this->fullResponse += "Connection: " + ConnectionValue + " \r\n";
 	this->fullResponse += "\r\n";
 	this->fullResponse += this->body;
-	LOG_INFO();
-	std::cout << fullResponse << std::endl;
+
 }
 
 std::string HttpResponse::getPath() const

@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/30 17:37:19 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/17 19:59:36 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 22:50:20 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,8 +51,6 @@ bool HttpRequestHandler::getIsCgi()
 
 RequestStatus HttpRequestHandler::handleRequest()
 {
-	std::cout << "[DbgHandler] root='" << root << "' path='" << path << "' uploadEnabled=" << location->uploadEnabled << " uploadPath='" << location->uploadPath << "'" << std::endl;
-	std::cout << "[DbgHandler] dirExists(root)=" << dirExists(root) << " hasAccess(root,R_OK|X_OK)=" << hasAccess(root, R_OK | X_OK) << std::endl;
 	if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
 		return REQ_INTERNAL_SERVER_ERROR;
 	if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
@@ -87,12 +85,6 @@ bool HttpRequestHandler::isCgiRequest()
 	return false;
 }
 
-// std::string intToString( int value) {
-//     std::stringstream ss; 
-//     ss << value;          
-//     return ss.str();     
-// }
-
 RequestStatus HttpRequestHandler::handleCgi()
 {
 	if (path.find(cgiBin) != 0)
@@ -113,7 +105,7 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
 	for (size_t i = 0; i < location->ctx.index.size(); i++)
 	{
-		std::string indexPath = joinPath(root, location->ctx.index[i]); //lhawther used root var
+		std::string indexPath = joinPath(root, location->ctx.index[i]);
 		if (fileExists(indexPath))
 		{
 			if (!hasAccess(indexPath, R_OK))
@@ -139,7 +131,6 @@ RequestStatus HttpRequestHandler::handleGet()
 	if (!hasAccess(path, R_OK))
 		return REQ_FORBIDDEN;
 	finalPath = path;
-	std::cout << *this;
 	return REQ_OK;
 }
 
