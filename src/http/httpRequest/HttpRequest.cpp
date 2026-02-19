@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/26 18:29:27 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/19 22:47:56 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/20 00:35:20 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,16 +15,17 @@
 #include "HttpRequestHandler.hpp"
 #include "HttpRequestParser.hpp"
 
-HttpRequest::HttpRequest() : httpConfig(),
-							 server(NULL),
-							 location(NULL),
-							 _localIp(),
-							 _localPort(),
-							 request(),
-							 redirectCode(),
-							 isCgi(false)
-{
-}
+// HttpRequest::HttpRequest() : httpConfig(),
+// 							 server(NULL),
+// 							 location(NULL),
+// 							 _localIp(),
+// 							 _localPort(),
+// 							 request(),
+// 							 redirectCode(),
+// 							 isCgi(false)
+// {
+// }
+
 
 bool HttpRequest::getIsCgi()
 {
@@ -35,23 +36,23 @@ void HttpRequest::setIsCgi(bool value)
 {
 	this->isCgi = value;
 }
-HttpRequest &HttpRequest::operator=(const HttpRequest &request)
-{
-	if (this != &request)
-	{
-		this->method = request.method;
-		this->uri = request.uri;
-		this->httpVersion = request.httpVersion;
-		this->headers = request.headers;
-		this->body = request.body;
-		this->status = request.status;
-		this->finalPath = request.finalPath;
-		this->redirectUri = request.redirectUri;
-		this->redirectCode = request.redirectCode;
-		this->isCgi = request.isCgi;
-	}
-	return *this;
-}
+// HttpRequest &HttpRequest::operator=(const HttpRequest &request)
+// {
+// 	if (this != &request)
+// 	{
+// 		this->method = request.method;
+// 		this->uri = request.uri;
+// 		this->httpVersion = request.httpVersion;
+// 		this->headers = request.headers;
+// 		this->body = request.body;
+// 		this->status = request.status;
+// 		this->finalPath = request.finalPath;
+// 		this->redirectUri = request.redirectUri;
+// 		this->redirectCode = request.redirectCode;
+// 		this->isCgi = request.isCgi;
+// 	}
+// 	return *this;
+// }
 
 HttpRequest::~HttpRequest()
 {
@@ -61,41 +62,39 @@ HttpRequest::HttpRequest(
 	const HttpConfig &config,
 	const std::string &reqStr,
 	const std::string &localIp,
-	int localPort)
-	: httpConfig(config),
-	  server(NULL),
-	  location(NULL),
-	  _localIp(localIp),
-	  _localPort(localPort),
-	  request(reqStr),
-	  redirectCode(0),
-	  isCgi(false)
-
+	int localPort):
+		httpConfig(config),
+		server(NULL),
+		location(NULL),
+		_localIp(localIp),
+		_localPort(localPort),
+		request(reqStr),
+		isCgi(false),
+		redirectCode(0)
 {
-
 	processRawRequest();
 }
 
-HttpRequest::HttpRequest(const HttpRequest &other)
-	: httpConfig(other.httpConfig),
-	  server(other.server),
-	  location(other.location),
-	  _localIp(other._localIp),
-	  _localPort(other._localPort),
-	  request(other.request),
-	  method(other.method),
-	  uri(other.uri),
-	  httpVersion(other.httpVersion),
-	  headers(other.headers),
-	  body(other.body),
-	  status(other.status),
-	  finalPath(other.finalPath),
-	  redirectUri(other.redirectUri),
-	  redirectCode(other.redirectCode),
-		isCgi(other.isCgi)
-// add cgi
-{
-}
+// HttpRequest::HttpRequest(const HttpRequest &other)
+// 	: httpConfig(other.httpConfig),
+// 	  server(other.server),
+// 	  location(other.location),
+// 	  _localIp(other._localIp),
+// 	  _localPort(other._localPort),
+// 	  request(other.request),
+// 	  method(other.method),
+// 	  uri(other.uri),
+// 	  httpVersion(other.httpVersion),
+// 	  headers(other.headers),
+// 	  body(other.body),
+// 	  status(other.status),
+// 	  finalPath(other.finalPath),
+// 	  redirectUri(other.redirectUri),
+// 	  redirectCode(other.redirectCode),
+// 		isCgi(other.isCgi)
+// // add cgi
+// {
+// }
 
 Cgi &HttpRequest::getCgi()
 {

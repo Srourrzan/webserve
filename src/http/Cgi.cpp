@@ -109,15 +109,14 @@ void Cgi::handleCgiBody(HttpRequest &request)
 
 void Cgi::handleCgiOutput(HttpRequest &request)
 {
-	Cgi &cgi = request.getCgi();
-
 	char buf[BUFFER_SIZE];
+	Cgi &cgi = request.getCgi();
 	int bytes = read(cgi.stdoutFd, buf, BUFFER_SIZE);
+
 	if (bytes == -1)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return;
-
 		std::cerr << "CGI Read Error: Failed to read from script" << std::endl;
 		close(cgi.stdoutFd);
 		cgi.stdoutFd = -1;
@@ -129,7 +128,6 @@ void Cgi::handleCgiOutput(HttpRequest &request)
 		close(cgi.stdoutFd);
 		cgi.stdoutFd = -1;
 		cgi.stdoutClosed = true;
-
 		if (cgi.cgiOutput.empty())
 		{
 			std::cerr << "CGI Error: Empty response" << std::endl;
@@ -167,8 +165,15 @@ void Cgi::buildCgiEnv(HttpRequest &request)
 
 void Cgi::prepareCgiEnv(HttpRequest &req)
 {
-	req.getCgi().buildCgiEnv(req);
-	envp = cgiMaptoChar(req.getCgi().cgiEnv);
+	if (this->envp != NULL)
+	{
+		for (size_t i = 0; envp[i] != NULL; i++)
+			delete[] envp[i];
+		delete[] envp;
+		envp = NULL;
+	}
+	this->buildCgiEnv(req);
+	envp = cgiMaptoChar(this->cgiEnv);
 }
 
 char **Cgi::cgiMaptoChar(std::map<std::string, std::string> &cgiEnv)
@@ -187,10 +192,10 @@ char **Cgi::cgiMaptoChar(std::map<std::string, std::string> &cgiEnv)
 	return envp;
 }
 
-void Cgi::setCgi(const Cgi &c)
-{
-	*this = c;
-}
+// void Cgi::setCgi(const Cgi &c)
+// {
+// 	*this = c;
+// }
 
 void Cgi::executeCgi(HttpRequest &req)
 {
@@ -208,7 +213,7 @@ void Cgi::executeCgi(HttpRequest &req)
 		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
 		return;
 	}
-	req.getCgi().prepareCgiEnv(req);
+	this->prepareCgiEnv(req);
 	pid_t pid = fork();
 	if (pid < 0)
 	{
@@ -237,7 +242,7 @@ void Cgi::executeCgi(HttpRequest &req)
 			const_cast<char *>(interpreter.c_str()),
 			const_cast<char *>(script.c_str()),
 			NULL};
-		execve(argv[0], argv, req.getCgi().envp);
+		execve(argv[0], argv, this->envp);
 		perror("execve failed");
 		_exit(127);
 	}
@@ -249,11 +254,11 @@ void Cgi::executeCgi(HttpRequest &req)
 	close(stdin_fds[1]);
 	
 	fcntl(stdout_fds[0], F_SETFL, O_NONBLOCK);
-	req.getCgi().pid = pid;
-	req.getCgi().stdinFd = -1;
-	req.getCgi().stdoutFd = stdout_fds[0];
-	req.getCgi().stdinClosed = true;
-	req.getCgi().stdoutClosed = false;
+	this->pid = pid;
+	this->stdinFd = -1;
+	this->stdoutFd = stdout_fds[0];
+	this->stdinClosed = true;
+	this->stdoutClosed = false;
 
 	const int CGI_TIMEOUT = 5;
 	time_t start = time(NULL);
@@ -288,9 +293,9 @@ void Cgi::executeCgi(HttpRequest &req)
 		return;
 	}
 	// Read all remaining CGI output after child exits
-	if (req.getCgi().stdoutFd != -1)
+	if (this->stdoutFd != -1)
 	{
-		int fd = req.getCgi().stdoutFd;
+		int fd = this->stdoutFd;
 		char buf[BUFFER_SIZE];
 		ssize_t n;
 		// Remove O_NONBLOCK for final blocking read to ensure we get all data
@@ -300,7 +305,7 @@ void Cgi::executeCgi(HttpRequest &req)
 			n = read(fd, buf, BUFFER_SIZE);
 			if (n > 0)
 			{
-				req.getCgi().cgiOutput.append(buf, n);
+				this->cgiOutput.append(buf, n);
 			}
 			else if (n == 0)
 			{
@@ -318,7 +323,7 @@ void Cgi::executeCgi(HttpRequest &req)
 			}
 		}
 		close(fd);
-		req.getCgi().stdoutFd = -1;
-		req.getCgi().stdoutClosed = true;
+		this->stdoutFd = -1;
+		this->stdoutClosed = true;
 	}
 }

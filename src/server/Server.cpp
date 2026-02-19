@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/19 23:51:11 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/20 01:35:25 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -469,6 +469,7 @@ void Server::readFromClient(Socket &client)
 	}
 	changePollEvent(client.fd, POLLOUT);
 	delete(client.request);
+	client.request = NULL;
 }
 
 

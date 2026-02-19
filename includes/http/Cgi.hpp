@@ -1,17 +1,19 @@
 #ifndef CGI_HPP
-#define CGI_HPP
-#include <map>
-#include <string>
-#include <sys/types.h>
+# define CGI_HPP
+
+# include <map>
+# include <string>
+# include <sys/types.h>
 
 class HttpRequest;
+
 class Cgi
 {
 public:
 	Cgi();
 	~Cgi();
 	void buildCgiEnv(HttpRequest &req);
-	void setCgi(const Cgi &c);
+	// void setCgi(const Cgi &c);
 	char **cgiMaptoChar(std::map<std::string, std::string> &map);
 	void prepareCgiEnv(HttpRequest &req);
 	void executeCgi(HttpRequest &req);
