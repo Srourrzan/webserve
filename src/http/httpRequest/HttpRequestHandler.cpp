@@ -16,10 +16,8 @@
 #include "HttpResponse.hpp"
 #include <sstream>
 
-
-
 HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
-    : req(r), finalPath("") , root(""), cgiBin(""), uploadPath(""), uri(""), path(""), body(""), location(NULL)
+    : isCgi(false), req(r), finalPath(""), root(""), cgiBin(""), uploadPath(""), uri(""), path(""), body(""), location(NULL)
 {
 	body = req.getBody();
 	location = req.getLocation();
@@ -34,8 +32,6 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r)
 
 RequestStatus HttpRequestHandler::handleRequest()
 {
-	std::cout << "[DbgHandler] root='" << root << "' path='" << path << "' uploadEnabled=" << location->uploadEnabled << " uploadPath='" << location->uploadPath << "'" << std::endl;
-	std::cout << "[DbgHandler] dirExists(root)=" << dirExists(root) << " hasAccess(root,R_OK|X_OK)=" << hasAccess(root, R_OK | X_OK) << std::endl;
 	if (!dirExists(root) || !hasAccess(root, R_OK | X_OK))
 		return REQ_INTERNAL_SERVER_ERROR;
 	if (req.getMethod() != "POST" && !dirExists(path) && !fileExists(path))
@@ -70,12 +66,6 @@ bool HttpRequestHandler::isCgiRequest()
 	return false;
 }
 
-// std::string intToString( int value) {
-//     std::stringstream ss; 
-//     ss << value;          
-//     return ss.str();     
-// }
-
 RequestStatus HttpRequestHandler::handleCgi()
 {
 	if (path.find(cgiBin) != 0)
@@ -84,18 +74,9 @@ RequestStatus HttpRequestHandler::handleCgi()
 		return REQ_FORBIDDEN;
 
 	finalPath = path;
-	LOG_INFO();
-	std::cout << "final path "
-						<< finalPath
-						<< std::endl;
 	req.setFinalPath(finalPath);
-	LOG_INFO();
-	std::cout << "calling cgi"
-						<< std::endl;
 	isCgi = true;
 	req.getCgi().executeCgi(req);
-	//check error work on
-	
 	return REQ_OK;
 }
 
@@ -105,7 +86,7 @@ RequestStatus HttpRequestHandler::checkIndexFiles(const std::string& dirPath)
 {
 	for (size_t i = 0; i < location->ctx.index.size(); i++)
 	{
-		std::string indexPath = joinPath(root, location->ctx.index[i]); //lhawther used root var
+		std::string indexPath = joinPath(root, location->ctx.index[i]);
 		if (fileExists(indexPath))
 		{
 			if (!hasAccess(indexPath, R_OK))
@@ -131,7 +112,6 @@ RequestStatus HttpRequestHandler::handleGet()
 	if (!hasAccess(path, R_OK))
 		return REQ_FORBIDDEN;
 	finalPath = path;
-	std::cout << *this;
 	return REQ_OK;
 }
 

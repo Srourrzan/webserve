@@ -21,6 +21,8 @@ private:
 	std::string contentType;
 
 public:
+	Cgi();
+	~Cgi();
 	pid_t pid;
 	void buildCgiEnv(HttpRequest &req);
 	void setCgi(const Cgi &c);

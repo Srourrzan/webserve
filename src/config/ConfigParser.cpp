@@ -120,7 +120,6 @@ bool ConfigParser::parseLocDirective(const std::string& directive, LocationConfi
 			parseBool(directive, location.cgiEnabled);
 		}
 	}
-		// parseBool(directive, (directive == "upload" ? location.uploadEnabled : location.cgiEnabled));
 	else if (directive == "upload_path")
 		parseString("upload_path", NULL, &location.uploadPath);
 	else
