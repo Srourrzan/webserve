@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:44:23 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/14 18:28:31 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:28:07 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #include "ConfigParser.hpp"
 
 ConfigContext::ConfigContext() : autoIndex(-1) {}
+
+ConfigContext::~ConfigContext() {}
 
 void ConfigContext::inheritFrom(const ConfigContext& parent)
 {
@@ -64,6 +66,8 @@ ListenConfig::ListenConfig() : port(8080)
     host = "0.0.0.0";
 }
 
+ListenConfig::~ListenConfig() {}
+
 bool ListenConfig::operator==(const ListenConfig& other) const
 {
     return (host == other.host && port == other.port);
@@ -71,13 +75,20 @@ bool ListenConfig::operator==(const ListenConfig& other) const
 
 LocationConfig::LocationConfig() : redirectCode(0), uploadEnabled(0), cgiEnabled(0) {}
 
+LocationConfig::~LocationConfig() {}
+
 ServerConfig::ServerConfig()
 {
     ListenConfig defaultListen;
     listen.push_back(defaultListen);
 }
 
+ServerConfig::~ServerConfig() {}
+
 HttpConfig::HttpConfig() {}
+
+HttpConfig::~HttpConfig() {}
+
 
 void LocationConfig::applyDefaults()
 {

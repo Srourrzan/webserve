@@ -6,11 +6,15 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 23:47:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 15:20:22 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:36:01 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigValidator.hpp"
+
+ConfigValidator::ConfigValidator() {}
+
+ConfigValidator::~ConfigValidator() {}
 
 static void compareServers(const ServerConfig& s1, const ServerConfig& s2)
 {

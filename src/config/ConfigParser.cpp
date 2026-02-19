@@ -6,13 +6,15 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:36:34 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/07 15:33:21 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:22:17 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ConfigParser.hpp"
 
 ConfigParser::ConfigParser() {}
+
+ConfigParser::~ConfigParser() {}
 
 void ConfigParser::parse(const std::string& filename)
 {
@@ -120,7 +122,6 @@ bool ConfigParser::parseLocDirective(const std::string& directive, LocationConfi
 			parseBool(directive, location.cgiEnabled);
 		}
 	}
-		// parseBool(directive, (directive == "upload" ? location.uploadEnabled : location.cgiEnabled));
 	else if (directive == "upload_path")
 		parseString("upload_path", NULL, &location.uploadPath);
 	else

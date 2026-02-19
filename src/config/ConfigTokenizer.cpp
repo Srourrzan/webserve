@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigTokenizer.cpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dikhalil <dikhalil@student.42amman.com>    +#+  +:+       +#+        */
+/*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/28 18:56:43 by dikhalil          #+#    #+#             */
-/*   Updated: 2025/12/31 20:34:50 by dikhalil         ###   ########.fr       */
+/*   Updated: 2026/02/19 23:33:31 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,99 +15,100 @@
 
 ConfigTokenizer::ConfigTokenizer() : pos(0) {}
 
+ConfigTokenizer::~ConfigTokenizer() {}
+
 std::string ConfigTokenizer::removeComments(const std::string& line)
 {
-    size_t commentPos = line.find('#');
-    if (commentPos != std::string::npos)
-        return line.substr(0, commentPos);
-    return line;
+	size_t commentPos = line.find('#');
+	if (commentPos != std::string::npos)
+		return line.substr(0, commentPos);
+	return line;
 }
 
 std::string ConfigTokenizer::addSpacesBetweenSymbol(const std::string& line)
 {
-    std::ostringstream oss;
-    for (size_t i = 0; i < line.length(); i++)
-    {
-        char c = line[i];
-        if (c == '{' || c == '}' || c == ';')
-            oss << " " << c << " ";
-        else
-            oss << c;
-    }
-    return oss.str();
+	std::ostringstream oss;
+	for (size_t i = 0; i < line.length(); i++)
+	{
+		char c = line[i];
+		if (c == '{' || c == '}' || c == ';')
+			oss << " " << c << " ";
+		else
+			oss << c;
+	}
+	return oss.str();
 }
 
 std::string ConfigTokenizer::stripQuotes(const std::string& token)
 {
-    if (token.length() > 2 && token[0] == '"' && token[token.length() - 1] == '"')
-        return token.substr(1, token.length() - 2);
-    return token;
+	if (token.length() > 2 && token[0] == '"' && token[token.length() - 1] == '"')
+		return token.substr(1, token.length() - 2);
+	return token;
 }
 
 void ConfigTokenizer::tokenizeFile(const std::string& filename)
 {
-    if (access(filename.c_str(), R_OK) != 0)
-        throw std::runtime_error("No read permission for config file " + filename);
-    std::ifstream configFile(filename.c_str());
-    if (!configFile.is_open())
-        throw std::runtime_error("Could not open config file " + filename);
-    
-    std::string line;
-    while (std::getline(configFile, line))
-    {
-        std::string cleanLine = removeComments(line);
-        cleanLine = trim(cleanLine);
-        if (cleanLine.empty())
-            continue;
-        cleanLine = addSpacesBetweenSymbol(cleanLine);
-        
-        std::stringstream ss(cleanLine);
-        std::string token;
-        while (ss >> token)
-            tokens.push_back(token);
-    }
-    configFile.close();
-    pos = 0;
+	std::string line;
+	std::string token;
+	
+	if (access(filename.c_str(), R_OK) != 0)
+		throw std::runtime_error("No read permission for config file " + filename);
+	std::ifstream configFile(filename.c_str());
+	if (!configFile.is_open())
+		throw std::runtime_error("Could not open config file " + filename);
+	while (std::getline(configFile, line))
+	{
+		std::string cleanLine = removeComments(line);
+		cleanLine = trim(cleanLine);
+		if (cleanLine.empty())
+			continue;
+		cleanLine = addSpacesBetweenSymbol(cleanLine);		
+		std::stringstream ss(cleanLine);
+		while (ss >> token)
+			tokens.push_back(token);
+	}
+	configFile.close();
+	pos = 0;
 }
 
 std::vector<std::string>& ConfigTokenizer::getTokens()
 {
-    return tokens;
+	return tokens;
 }
 
 bool ConfigTokenizer::hasMore() const
 {
-    return pos < tokens.size();
+	return pos < tokens.size();
 }
 
 std::string ConfigTokenizer::peek() const
 {
-    if (!hasMore())
-        throw std::runtime_error("Unexpected end of file");
-    return tokens[pos];
+	if (!hasMore())
+		throw std::runtime_error("Unexpected end of file");
+	return tokens[pos];
 }
 
 std::string ConfigTokenizer::consume()
 {
-    if (!hasMore())
-        throw std::runtime_error("Unexpected end of file");
-    return tokens[pos++];
+	if (!hasMore())
+		throw std::runtime_error("Unexpected end of file");
+	return tokens[pos++];
 }
 
 std::string ConfigTokenizer::consumeValue()
 {
-    return (stripQuotes(consume()));
+	return (stripQuotes(consume()));
 }
 
 void ConfigTokenizer::expect(const std::string& expected)
 {
-    std::string token = consume();
-    if (token != expected)
-    {
-        if (expected == ";" && (token == "}" || token == "{" || ConfigValidator::isReserved(token)))
-        {
-            throw std::runtime_error("Missing semicolon ';' before '" + token + "'");
-        }
-        throw std::runtime_error("Expected '" + expected + "' but got '" + token + "'");
-    }
+	std::string token = consume();
+	if (token != expected)
+	{
+		if (expected == ";" && (token == "}" || token == "{" || ConfigValidator::isReserved(token)))
+		{
+			throw std::runtime_error("Missing semicolon ';' before '" + token + "'");
+		}
+		throw std::runtime_error("Expected '" + expected + "' but got '" + token + "'");
+	}
 }

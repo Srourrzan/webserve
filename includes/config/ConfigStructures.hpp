@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/16 20:38:58 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/01/31 21:28:22 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/19 23:27:56 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,29 +19,32 @@
 
 struct ConfigContext
 {
+	ConfigContext();
+	~ConfigContext();
+	
 	std::string root;
 	std::vector<std::string> index;
 	std::string clientMaxBodySize;
 	int autoIndex;
 	std::map<int, std::string> errorPages;
 	std::string cgiBinPath;
-
-	ConfigContext();
 	void inheritFrom(const ConfigContext& parent);
 	void applyDefaults();
 };
 
 struct ListenConfig
 {
-	std::string host;
-	int port;
-	
 	ListenConfig();
+	~ListenConfig();
+	int port;
+	std::string host;
 	bool operator==(const ListenConfig& other) const;
 };
 
 struct LocationConfig
 {
+	LocationConfig();
+	~LocationConfig();
 	std::string path;
 	ConfigContext ctx;
 	std::vector<std::string> allowedMethods;
@@ -51,20 +54,19 @@ struct LocationConfig
 	std::string uploadPath;
 	int cgiEnabled;
 	std::vector<std::string> cgiExtensions;
-	
-	LocationConfig();
 	void applyDefaults();
 	bool operator()(class ConfigParser* parser, const std::string& directive);
+	
 };
 
 struct ServerConfig
 {
+	ServerConfig();
+	~ServerConfig();
 	std::vector<ListenConfig> listen;
 	std::vector<std::string> serverNames;
 	ConfigContext ctx;
 	std::vector<LocationConfig> locations;
-
-	ServerConfig();
 	void applyDefaults();
 	const LocationConfig* findLocationByUri(const std::string& url) const;
 	bool operator()(class ConfigParser* parser, const std::string& directive);
@@ -72,10 +74,10 @@ struct ServerConfig
 
 struct HttpConfig
 {
+	HttpConfig();
+	~HttpConfig();
 	ConfigContext ctx;
 	std::vector<ServerConfig> servers;
-	
-	HttpConfig();
 	void createDefaultConfig();
 	const ServerConfig* findServerByHost(const std::string& hostHeader,
 																	const std::string& localIp, const int localPort) const;
