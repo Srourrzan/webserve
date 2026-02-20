@@ -22,6 +22,7 @@ void HttpResponse::setCodeStatus(int input)
     this->codeStatus = input;
 }
 
+
 std::string HttpResponse::getStatusMsg(int code)
 {
     switch (code)
@@ -54,6 +55,8 @@ std::string HttpResponse::getStatusMsg(int code)
         return "URI Too Long";
     case REQ_INTERNAL_SERVER_ERROR:
         return "Internal Server Error";
+    case REQ_GATEWAY_TIMEOUT:
+        return "Gateway Timeout";
     case REQ_NOT_IMPLEMENTED:
         return "Not Implemented";
     case REQ_VERSION_NOT_SUPPORTED:

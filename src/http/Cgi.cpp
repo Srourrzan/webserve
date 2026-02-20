@@ -77,66 +77,83 @@ std::string Cgi::getCgiHeaders() const
 	return this->cgiHeaders;
 }
 
+pid_t Cgi::getPid() const
+{
+	return this->pid;
+}
+
 void Cgi::handleCgiBody(HttpRequest &request)
 {
-	const std::string &body = request.getBody();
+	ssize_t bytes; 
 	Cgi &cgi = request.getCgi();
-	int bytes = write(cgi.stdinFd, body.c_str() + cgi.cgiBodySent, body.size() - cgi.cgiBodySent);
+	const std::string &body = request.getBody();
+
+	if (cgi.stdinClosed || cgi.stdinFd == -1)
+		return ;
+	if (cgi.cgiBodySent >= body.size()) //nothing left to send
+	{
+		close(cgi.stdinFd);
+		cgi.stdinFd = -1;
+		cgi.stdinClosed = true;
+		return ;
+	}
+	bytes = write(cgi.stdinFd, body.c_str() + cgi.cgiBodySent, 
+								body.size() - cgi.cgiBodySent);
 	if (bytes == -1)
 	{
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
-			return;
-
+			return ;
 		std::cerr << "CGI Write Error: Broken Pipe" << std::endl;
 		close(cgi.stdinFd);
 		cgi.stdinFd = -1;
+		cgi.stdinClosed = true;
 		request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
-		return;
+		return ;
 	}
-	else if (bytes > 0)
-	{
+	if (bytes > 0)
 		cgi.cgiBodySent += bytes;
-	}
-
-	else if (cgi.cgiBodySent >= body.size())
+	if (cgi.cgiBodySent >= body.size()) //EOF
 	{
 		close(cgi.stdinFd);
 		cgi.stdinFd = -1;
 		cgi.stdinClosed = true;
 	}
-
 }
 
 void Cgi::handleCgiOutput(HttpRequest &request)
 {
 	char buf[BUFFER_SIZE];
 	Cgi &cgi = request.getCgi();
-	int bytes = read(cgi.stdoutFd, buf, BUFFER_SIZE);
-
-	if (bytes == -1)
+	if (cgi.stdoutClosed || cgi.stdoutFd == -1)
+		return;
+	while (true)
 	{
+		ssize_t bytes = read(cgi.stdoutFd, buf, BUFFER_SIZE);
+		if (bytes > 0)
+		{
+			cgi.cgiOutput.append(buf, bytes);
+			continue;
+		}
+		if (bytes == 0)
+		{
+			close(cgi.stdoutFd);
+			cgi.stdoutFd = -1;
+			cgi.stdoutClosed = true;
+			if (cgi.cgiOutput.empty())
+			{
+				std::cerr << "CGI Error: Empty response" << std::endl;
+				request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
+			}
+			return;
+		}
 		if (errno == EAGAIN || errno == EWOULDBLOCK)
 			return;
 		std::cerr << "CGI Read Error: Failed to read from script" << std::endl;
 		close(cgi.stdoutFd);
 		cgi.stdoutFd = -1;
+		cgi.stdoutClosed = true;
 		request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
 		return;
-	}
-	else if (bytes == 0)
-	{
-		close(cgi.stdoutFd);
-		cgi.stdoutFd = -1;
-		cgi.stdoutClosed = true;
-		if (cgi.cgiOutput.empty())
-		{
-			std::cerr << "CGI Error: Empty response" << std::endl;
-			request.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
-		}
-	}
-	else if (bytes > 0)
-	{
-		cgi.cgiOutput.append(buf, bytes);
 	}
 }
 
@@ -199,6 +216,9 @@ char **Cgi::cgiMaptoChar(std::map<std::string, std::string> &cgiEnv)
 
 void Cgi::executeCgi(HttpRequest &req)
 {
+	std::cout << "executing cgi"
+						<< std::endl;
+
 	int stdin_fds[2];
 	int stdout_fds[2];
 	if ((pipe(stdin_fds) == -1))
@@ -251,79 +271,83 @@ void Cgi::executeCgi(HttpRequest &req)
 	close(stdout_fds[1]);
 	
 	// Close stdin immediately since we're not sending data to the CGI script
-	close(stdin_fds[1]);
-	
+	// close(stdin_fds[1]);
+	//Make both ends non-blockin
+	fcntl(stdin_fds[1], F_SETFL, O_NONBLOCK);
 	fcntl(stdout_fds[0], F_SETFL, O_NONBLOCK);
 	this->pid = pid;
-	this->stdinFd = -1;
-	this->stdoutFd = stdout_fds[0];
-	this->stdinClosed = true;
+	this->stdinFd = stdin_fds[1]; //write request body here
+	this->stdoutFd = stdout_fds[0]; // read CGI output here
+	this->stdinClosed =false;
 	this->stdoutClosed = false;
+	this->cgiBodySent = 0;
+	this->cgiOutput.clear();
 
-	const int CGI_TIMEOUT = 5;
-	time_t start = time(NULL);
-	int status = 0;
-	while (true)
-	{
-		pid_t ret = waitpid(pid, &status, WNOHANG);
-		if (ret == pid)
-			break;
+	return ;
+	// const int CGI_TIMEOUT = 5;
+	// time_t start = time(NULL);
+	// int status = 0;
+	// while (true)
+	// {
+	// 	pid_t ret = waitpid(pid, &status, WNOHANG);
+	// 	if (ret == pid)
+	// 		break;
 
-		if (time(NULL) - start > CGI_TIMEOUT)
-		{
-			kill(pid, SIGKILL);
-			req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT));
-			return;
-		}
-		usleep(10000);
-	}
+	// 	if (time(NULL) - start > CGI_TIMEOUT)
+	// 	{
+	// 		kill(pid, SIGKILL);
+	// 		req.setStatus(static_cast<RequestStatus>(REQ_GATEWAY_TIMEOUT));
+	// 		return;
+	// 	}
+	// 	usleep(10000);
+	// }
 
-	if (WIFEXITED(status))
-	{
-		int exitCode = WEXITSTATUS(status);
-		if (exitCode != 0)
-		{
-			req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
-			return;
-		}
-	}
-	else
-	{
-		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
-		return;
-	}
-	// Read all remaining CGI output after child exits
-	if (this->stdoutFd != -1)
-	{
-		int fd = this->stdoutFd;
-		char buf[BUFFER_SIZE];
-		ssize_t n;
-		// Remove O_NONBLOCK for final blocking read to ensure we get all data
-		fcntl(fd, F_SETFL, 0);
-		while (true)
-		{
-			n = read(fd, buf, BUFFER_SIZE);
-			if (n > 0)
-			{
-				this->cgiOutput.append(buf, n);
-			}
-			else if (n == 0)
-			{
-				// EOF reached
-				break;
-			}
-			else
-			{
-				// Error
-				if (errno != EAGAIN && errno != EWOULDBLOCK)
-				{
-					std::cerr << "CGI Read Error: " << strerror(errno) << std::endl;
-				}
-				break;
-			}
-		}
-		close(fd);
-		this->stdoutFd = -1;
-		this->stdoutClosed = true;
-	}
+	// if (WIFEXITED(status))
+	// {
+	// 	int exitCode = WEXITSTATUS(status);
+	// 	if (exitCode != 0)
+	// 	{
+	// 		req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
+	// 		return;
+	// 	}
+	// }
+	// else
+	// {
+	// 	req.setStatus(static_cast<RequestStatus>(REQ_INTERNAL_SERVER_ERROR));
+	// 	return;
+	// }
+	// // Read all remaining CGI output after child exits
+	// if (this->stdoutFd != -1)
+	// {
+	// 	int fd = this->stdoutFd;
+	// 	char buf[BUFFER_SIZE];
+	// 	ssize_t n;
+	// 	// Remove O_NONBLOCK for final blocking read to ensure we get all data
+	// 	fcntl(fd, F_SETFL, 0);
+	// 	while (true)
+	// 	{
+	// 		n = read(fd, buf, BUFFER_SIZE);
+	// 		if (n > 0)
+	// 		{
+	// 			this->cgiOutput.append(buf, n);
+	// 		}
+	// 		else if (n == 0)
+	// 		{
+	// 			// EOF reached
+	// 			break;
+	// 		}
+	// 		else
+	// 		{
+	// 			// Error
+	// 			if (errno != EAGAIN && errno != EWOULDBLOCK)
+	// 			{
+	// 				std::cerr << "CGI Read Error: " << strerror(errno) << std::endl;
+	// 			}
+	// 			break;
+	// 		}
+	// 	}
+	// 	close(fd);
+	// 	this->stdoutFd = -1;
+	// 	this->stdoutClosed = true;
+	// }
 }

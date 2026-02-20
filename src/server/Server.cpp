@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:04 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/20 01:35:25 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/20 15:26:10 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,12 +64,21 @@ void Server::closeSocket(std::vector<Socket> &sockets, int fd)
 	{
 		if (sockets[i].fd == fd)
 		{
+			Socket *sock = &sockets[i];
+			for (size_t j = 0; j < this->_cgiConnections.size(); )
+			{
+				if (this->_cgiConnections[j].client == sock)
+					removeCgiConnection(this->_cgiConnections[j]);
+				else
+					++j;
+			}
 			if (sockets[i].request != NULL)
 			{
 				delete sockets[i].request;
 				sockets[i].request = NULL;
 			}
-			close(fd);
+			if (sock->fd != -1)
+				close(fd);
 			sockets.erase(sockets.begin() + i);
 			return;
 		}
@@ -251,10 +260,8 @@ bool Server::requestIsComplete(const std::string &buffer)
 		if (headerEnd == std::string::npos)
 			return false;
 	}
-	
 	std::string header = buffer.substr(0, headerEnd);
 	std::string body = buffer.substr(headerEnd + bodyStart);
-
 	if (header.find("GET ") == 0 || header.find("DELETE ") == 0)
 		return true;
 	if (header.find("POST ") == 0)
@@ -425,6 +432,7 @@ void Server::build400AndClose(Socket &client)
 void Server::readFromClient(Socket &client)
 {
 	int localPort = 0;
+	CgiConnection conn;
 	std::string localIp;
 	HttpResponse response;
 	char buffer[BUFFER_SIZE];
@@ -445,7 +453,6 @@ void Server::readFromClient(Socket &client)
 	}
 	if (!requestIsComplete(client.buffer))
 		return;
-
 	Socket *ls = findSocket(this->_listenSockets, client.listenFd);
 	if (ls)
 	{
@@ -455,28 +462,86 @@ void Server::readFromClient(Socket &client)
 	client.request = new HttpRequest(_config, client.buffer, localIp, localPort);
 	HttpRequest& request = *client.request;
 	if (request.getIsCgi())
-		response.buildCgiResponse(request);
-	else
-		response.buildResponse(response, request);
-	client.responseString = response.getFullResponse();
-	client.totalSent = 0;
-	client.closeAfterResponse = false;
-	if (request.getHeaders().count("Connection"))
 	{
-		std::string conn = request.getHeaders().at("Connection");
-		if (conn == "close")
+		LOG_INFO();
+		std::cout << "Request is a cgi"
+							<< std::endl;
+		Cgi &cgi = request.getCgi();
+		cgi.executeCgi(request);
+		if (request.getStatus() != REQ_OK)
+		{
+			response.buildResponse(response, request);
+			client.responseString = response.getFullResponse();
+			client.totalSent = 0;
 			client.closeAfterResponse = true;
+			changePollEvent(client.fd, POLLOUT);
+			return ;
+		}
+		conn.client = &client;
+		conn.stdinFd = cgi.getStdinFd();
+		conn.stdoutFd = cgi.getStdoutFd();
+		conn.startTime = std::time(NULL);
+		this->_cgiConnections.push_back(conn);
+		if (conn.stdinFd != -1)
+			addToPoll(conn.stdinFd, POLLOUT);
+		if (conn.stdoutFd != -1)
+			addToPoll(conn.stdoutFd, POLLIN);
+		changePollEvent(client.fd, 0);
+		return ;
 	}
-	changePollEvent(client.fd, POLLOUT);
-	delete(client.request);
-	client.request = NULL;
+	else
+	{
+		response.buildResponse(response, request);
+		client.responseString = response.getFullResponse();
+		client.totalSent = 0;
+		client.closeAfterResponse = false;
+		if (request.getHeaders().count("Connection"))
+		{
+			std::string conn = request.getHeaders().at("Connection");
+			if (conn == "close")
+				client.closeAfterResponse = true;
+		}
+		changePollEvent(client.fd, POLLOUT);
+	}
+	// delete(client.request);
+	// client.request = NULL;
 }
 
 
 void Server::writeToClient(Socket &client)
 {
 	std::string &response = client.responseString;
-	ssize_t sent = send(client.fd, response.c_str() + client.totalSent, response.size() - client.totalSent, 0);
+	ssize_t sent = send(client.fd, 
+											response.c_str() + client.totalSent, 
+											response.size() - client.totalSent, 
+											0);
+	if (response.empty())
+	{
+		LOG_INFO();
+		std::cout << "response is empty"
+							<< std::cout;
+		std::cerr << "Warning: writeToClient called with empty responseString\n";
+		// You can choose to just close the socket:
+		closeSocket(this->_clientSockets, client.fd);
+		return;
+	}
+	size_t remaining = response.size() - client.totalSent;
+	LOG_INFO();
+	std::cout << "remaining: "
+						<< remaining
+						<< std::cout;
+	if (remaining == 0)
+	{
+		// Nothing left to send; treat it as finished.
+		client.totalSent = 0;
+		client.buffer.clear();
+		changePollEvent(client.fd, POLLIN);
+		if (client.closeAfterResponse)
+		{
+			closeSocket(this->_clientSockets, client.fd);
+		}
+		return;
+	}
 	if (sent <= 0)
 	{
 		std::cerr << "Error: send failed with result: " << sent << ", errno: " << errno << std::endl;
@@ -543,6 +608,8 @@ void Server::checkClientTimeouts()
 
 void Server::run()
 {
+	int fd;
+
 	initPollFds();
 	while (true)
 	{
@@ -564,11 +631,18 @@ void Server::run()
 		{
 			if (this->_pollFds[i].revents == 0)
 				continue;
-			if (findSocket(this->_listenSockets, this->_pollFds[i].fd) != NULL)
+			fd = this->_pollFds[i].fd;
+			if (findSocket(this->_listenSockets, fd) != NULL)
 				handleListenSocket(i);
-	
-			else
+			else if (Socket *client = findSocket(this->_clientSockets, fd))
 				handleClientSocket(i);
+			else if (CgiConnection *conn = findCgiConnectionByFd(fd))
+				handleCgiPollEvent(i);
+			else //Unkown fd
+			{
+				this->_pollFds.erase(this->_pollFds.begin() + i);
+				i--;
+			}
 		}
 	}
 }
@@ -590,4 +664,114 @@ std::ostream &operator<<(std::ostream &out, const Server &data)
 			<< listenSockets[i].port << "\n";
 	}
 	return (out);
+}
+
+CgiConnection* Server::findCgiConnectionByFd(int fd)
+{
+	for (size_t i = 0; i < this->_cgiConnections.size(); ++i)
+	{
+		if (this->_cgiConnections[i].stdinFd == fd ||
+				this->_cgiConnections[i].stdoutFd == fd)
+			return (&this->_cgiConnections[i]);
+	}
+	return NULL;
+}
+
+void Server::handleCgiPollEvent(size_t pollIndex)
+{
+	int fd;
+	Socket *client;
+	struct pollfd &pfd = this->_pollFds[pollIndex];
+
+	fd = pfd.fd;
+	CgiConnection *conn = findCgiConnectionByFd(fd);
+	if (!conn)
+	{
+		this->_pollFds.erase(this->_pollFds.begin() + pollIndex);
+		return ;
+	}
+	client = conn->client;
+	if (!client || !client->request)
+	{
+		removeCgiConnection(*conn);
+		this->_pollFds.erase(this->_pollFds.begin() + pollIndex);
+		return ;
+	}
+	HttpRequest &request = *client->request;
+	Cgi &cgi = request.getCgi();
+	if (std::time(NULL) - conn->startTime > CGI_TIMEOUT)
+	{
+		kill(cgi.getPid(), SIGKILL);
+		request.setStatus(REQ_GATEWAY_TIMEOUT);
+		HttpResponse response;
+		response.buildResponse(response, request);
+		client->responseString = response.getFullResponse();
+		client->totalSent = 0;
+		client->closeAfterResponse = true;
+		changePollEvent(client->fd, POLLOUT);
+		removeCgiConnection(*conn);
+		this->_pollFds.erase(this->_pollFds.begin() + pollIndex);
+		return ;
+	}
+	short revents = pfd.revents;
+	if (!cgi.isStdinClosed() && fd == cgi.getStdinFd() && (revents & POLLOUT))
+	{
+		cgi.handleCgiBody(request);
+		if (cgi.isStdinClosed())
+		{
+			for (size_t i = 0; i < this->_pollFds.size(); ++i)
+			{
+				if (this->_pollFds[i].fd == fd)
+				{
+					this->_pollFds.erase(this->_pollFds.begin() + i);
+					break ;
+				}
+			}
+			conn->stdinFd = -1;
+		}
+	}
+
+	if (!cgi.isStdoutClosed() && fd == cgi.getStdoutFd() && (revents & (POLLIN | POLLHUP | POLLERR)))
+	{
+		cgi.handleCgiOutput(request);
+		if (cgi.isStdoutClosed())
+		{
+			int status = 0;
+			waitpid(cgi.getPid(), &status, WNOHANG);
+			HttpResponse response;
+			if (request.getStatus() == REQ_OK)
+				response.buildCgiResponse(request);
+			if (response.getFullResponse().empty())
+			{
+				if (request.getStatus() == REQ_OK)
+					request.setStatus(REQ_INTERNAL_SERVER_ERROR);
+				response.buildResponse(response, request);
+			}
+			client->responseString = response.getFullResponse();
+			client->totalSent = 0;
+			client->closeAfterResponse = false; // you can decide close/keepalive based on headers
+			// Now we want to send the response
+			changePollEvent(client->fd, POLLOUT);
+			// Remove this CGI connection and stop polling stdoutFd
+			removeCgiConnection(*conn);
+			// Remove this pollfd entry
+			_pollFds.erase(_pollFds.begin() + pollIndex);
+		}
+	}
+}
+
+void Server::removeCgiConnection(CgiConnection &conn)
+{
+	if (conn.stdinFd != -1)
+		close(conn.stdinFd);
+	if (conn.stdoutFd != -1)
+		close(conn.stdoutFd);
+	for (size_t i = 0; i < this->_cgiConnections.size(); ++i)
+	{
+		if (&this->_cgiConnections[i] == &conn)
+		{
+			this->_cgiConnections.erase(this->_cgiConnections.begin() + i);
+			break;
+		}
+	}
 }

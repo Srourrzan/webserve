@@ -31,6 +31,7 @@ public:
 	std::string getCgibody() const;
 	void setContentType(std::string input);
 	std::string getContentType();
+	pid_t getPid() const;
 	
 private:
 	std::map<std::string, std::string> cgiEnv;

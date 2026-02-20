@@ -263,6 +263,8 @@ std::ostream &operator<<(std::ostream &out, const HttpRequest &data)
 void HttpRequest::setStatus(RequestStatus newStatus)
 {
 	this->status = newStatus;
+	if (this->status >= REQ_BAD_REQUEST)
+		handleErrorPageIfNeeded();
 }
 
 void HttpRequest::setFinalPath(std::string &path)

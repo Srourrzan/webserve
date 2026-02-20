@@ -6,7 +6,7 @@
 /*   By: rsrour <rsrour@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/19 16:50:16 by dikhalil          #+#    #+#             */
-/*   Updated: 2026/02/07 16:42:18 by rsrour           ###   ########.fr       */
+/*   Updated: 2026/02/20 15:10:50 by rsrour           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,9 +32,12 @@
 #include "HttpRequest.hpp"
 #include "ConfigValidator.hpp"
 
-#define BUFFER_SIZE 4096
-#define POLL_TIMEOUT 1000
-#define CLIENT_TIMEOUT 300
+# define CGI_TIMEOUT 5
+# define BUFFER_SIZE 4096
+# define POLL_TIMEOUT 1000
+# define CLIENT_TIMEOUT 300
+
+# define LOG_INFO() std::cout << __FILE__ << ":" << __LINE__ << " " << __func__<< ": ";
 
 class HttpRequest;
 
@@ -53,22 +56,36 @@ struct Socket
 
 };
 
+struct CgiConnection
+{
+	Socket				*client;
+	int						stdinFd;
+	int						stdoutFd;
+	std::time_t		startTime;
+};
+
+
 class Server
 {
 	public:
 		Server(const HttpConfig& config);
 		~Server();
 		void run();
+		void handlegiPollEvent(size_t pollIndex);
 		std::vector<Socket> getListenSockets() const;
+		CgiConnection* findCgiConnectionByFd(int fd);
+		void removeCgiConnection(CgiConnection &conn);
+		void handleCgiPollEvent(size_t pollIndex);
 			
 	private:
-		std::vector<struct pollfd> _pollFds;
+		HttpConfig _config;
 		std::vector<Socket> _listenSockets;
 		std::vector<Socket> _clientSockets;
-		HttpConfig _config;
+		std::vector<struct pollfd> _pollFds;
+		std::vector<CgiConnection> _cgiConnections;
 		
-		void closeSocket(std::vector<Socket>& sockets, int fd);
 		void closeAllSockets(std::vector<Socket>& sockets);
+		void closeSocket(std::vector<Socket>& sockets, int fd);
 		bool closeSocketOnError(Socket& ls, const std::string& errorMsg);
 		bool setupSocket(Socket& ls, struct addrinfo* addr);
 		struct addrinfo* getAddressInfo(const Socket& ls);

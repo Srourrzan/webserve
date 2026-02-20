@@ -34,8 +34,12 @@ HttpRequestHandler::HttpRequestHandler(HttpRequest& r):
 	location = req.getLocation();
 	if (location)
 	{
+		uri = req.getUri();
+		size_t queryPos = uri.find('?');
+		if (queryPos != std::string::npos)
+			uri = uri.substr(0, queryPos);
 		root = location->ctx.root;
-		path = buildPath(root, location->path, req.getUri());
+		path = buildPath(root, location->path, uri);
 		cgiBin = location->ctx.cgiBinPath;
 		uploadPath = location->uploadPath;
 	}
@@ -87,15 +91,16 @@ bool HttpRequestHandler::isCgiRequest()
 
 RequestStatus HttpRequestHandler::handleCgi()
 {
-	if (path.find(cgiBin) != 0)
+	if (!cgiBin.empty() && path.find(cgiBin) != 0)
 		return REQ_FORBIDDEN;    
-	if (!hasAccess(path, X_OK))
+	if (!fileExists(path))
+		return REQ_NOT_FOUND;
+	if (!hasAccess(path, R_OK))
 		return REQ_FORBIDDEN;
 
 	finalPath = path;
 	req.setFinalPath(finalPath);
 	this->_isCgi = true;
-	req.getCgi().executeCgi(req);
 	return REQ_OK;
 }
 
