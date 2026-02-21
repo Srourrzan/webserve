@@ -634,9 +634,9 @@ void Server::run()
 			fd = this->_pollFds[i].fd;
 			if (findSocket(this->_listenSockets, fd) != NULL)
 				handleListenSocket(i);
-			else if (Socket *client = findSocket(this->_clientSockets, fd))
+			else if (findSocket(this->_clientSockets, fd) != NULL)
 				handleClientSocket(i);
-			else if (CgiConnection *conn = findCgiConnectionByFd(fd))
+			else if (findCgiConnectionByFd(fd) != NULL)
 				handleCgiPollEvent(i);
 			else //Unkown fd
 			{

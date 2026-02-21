@@ -10,7 +10,21 @@ INCLUDES = -I./includes -I./includes/config -I./includes/server -I./includes/uti
 OBJ_DIR = obj
 
 # Find all .cpp files recursively in src/
-SRCS = $(shell find src -name '*.cpp')
+SRCS = \
+src/webserv.cpp \
+src/config/ConfigStructures.cpp \
+src/config/ConfigTokenizer.cpp \
+src/config/ConfigParser.cpp \
+src/config/ConfigValidator.cpp \
+src/http/Cgi.cpp \
+src/http/HttpResponse.cpp \
+src/http/httpRequest/HttpRequest.cpp \
+src/http/httpRequest/HttpRequestHandler.cpp \
+src/http/httpRequest/HttpRequestParser.cpp \
+src/http/httpRequest/HttpRequestValidator.cpp \
+src/server/Server.cpp \
+src/utils/info.cpp \
+src/utils/utils.cpp
 
 # Map each .cpp file in src/ to a .o file in obj/ with the same subdirectory structure
 OBJS = $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
